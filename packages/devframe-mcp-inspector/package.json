@@ -1,0 +1,28 @@
+{
+  "name": "@miguelrk/devframe-mcp-inspector",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+  },
+  "peerDependencies": {
+    "@vitejs/devtools-kit": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vitejs/devtools-kit": "catalog:",
+    "typescript": "catalog:",
+    "vite": "^6.4.1"
+  }
+}

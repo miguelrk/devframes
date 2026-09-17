@@ -1,0 +1,32 @@
+{
+  "name": "@miguelrk/devframe-scripts",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build:client": "node build.client.mjs",
+    "build:node": "tsc -p tsconfig.build.json",
+    "build": "pnpm run build:client && pnpm run build:node",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+  },
+  "peerDependencies": {
+    "devframe": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "devframe": "catalog:",
+    "esbuild": "^0.25.12",
+    "typescript": "catalog:",
+    "zod": "catalog:"
+  }
+}
