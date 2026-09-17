@@ -13,13 +13,20 @@ Vite DevTools panels and launchers. DevFrames are the tools that live in the Dev
 | `devframe-drizzle-studio` | launcher | Drizzle Studio |
 | `devframe-node-modules` | launcher | node_modules inspector |
 
-## Install in a consumer (no npm)
+## Install (from GitHub)
+
+These packages are not on npm.
 
 ```bash
-pnpm add github:miguelrk/devframes#path:/packages/devframe-scripts
-pnpm add "github:miguelrk/devframes#main&path:/packages/devframe-tanstack-query"
+pnpm add "devframe-scripts@github:miguelrk/devframes#path:/packages/devframe-scripts"
+pnpm add "devframe-tanstack-query@github:miguelrk/devframes#main&path:/packages/devframe-tanstack-query"
 pnpm add file:../devframes/packages/devframe-scripts
 ```
+
+Replace the package name and the `path:` folder with the package you want.
+
+> [!NOTE]
+> The `github:…#path:` specifier works with pnpm only.
 
 Run `pnpm build` in this repo before a `file:` or `github:` install. Client assets live under each package `dist/client/`. Commit `dist/` or add a `prepare` script if you install from GitHub without a build step.
 
