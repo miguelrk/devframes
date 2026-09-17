@@ -1,0 +1,1 @@
+{"version":3,"file":"publishWebmcpRegistry.d.ts","sourceRoot":"","sources":["../src/publishWebmcpRegistry.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,uBAAuB,EAAE,cAAc,EAAE,MAAM,YAAY,CAAA;AAEzE,eAAO,MAAM,2BAA2B,iCAAiC,CAAA;AAEzE,MAAM,MAAM,4BAA4B,GAAG;IACzC,GAAG,CAAC,EAAE,MAAM,CAAA;CACb,CAAA;AAED,eAAO,MAAM,qBAAqB,GAChC,aAAa,MAAM,cAAc,EACjC,UAAU,4BAA4B,KACrC,uBAKF,CAAA"}

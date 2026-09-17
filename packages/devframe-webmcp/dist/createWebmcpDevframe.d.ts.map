@@ -1,0 +1,1 @@
+{"version":3,"file":"createWebmcpDevframe.d.ts","sourceRoot":"","sources":["../src/createWebmcpDevframe.ts"],"names":[],"mappings":"AAIA,OAAO,KAAK,EAAE,mBAAmB,EAAE,MAAM,YAAY,CAAA;AAErD,eAAO,MAAM,iBAAiB,oBAAoB,CAAA;AAClD,eAAO,MAAM,uBAAuB,cAAc,CAAA;AAElD,MAAM,MAAM,2BAA2B,GAAG,mBAAmB,GAAG;IAC9D,WAAW,CAAC,EAAE,MAAM,CAAA;CACrB,CAAA;AAED,eAAO,MAAM,oBAAoB,GAAU,UAAS,2BAAgC,mDAqBnF,CAAA"}

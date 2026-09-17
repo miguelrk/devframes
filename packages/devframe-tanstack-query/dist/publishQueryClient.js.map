@@ -1,0 +1,1 @@
+{"version":3,"file":"publishQueryClient.js","sourceRoot":"","sources":["../src/publishQueryClient.ts"],"names":[],"mappings":"AAMA,MAAM,CAAC,MAAM,kBAAkB,GAAG,CAChC,MAAmB,EACnB,OAAmC,EAC7B,EAAE;IACR,MAAM,GAAG,GAAG,OAAO,EAAE,GAAG,IAAI,2BAA2B,CAAA;IACvD,MAAM,CAAC,MAAM,CAAC,MAAM,EAAE,EAAE,CAAC,GAAG,CAAC,EAAE,MAAM,EAAE,CAAC,CAAA;AAC1C,CAAC,CAAA"}

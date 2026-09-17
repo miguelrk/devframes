@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Scripts</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --panel: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --accent-dim: #1f3a5f;
+        --chip: #21262d;
+        --ok: #3fb950;
+        --fail: #f85149;
+      }
+      * { box-sizing: border-box; }
+      html, body, #app { height: 100%; margin: 0; }
+      body {
+        font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        container-type: size;
+        container-name: scripts;
+      }
+      #app { display: grid; grid-template-columns: 280px 1fr; min-height: 0; }
+      aside {
+        border-right: 1px solid var(--border);
+        background: var(--panel);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .search-row { display: flex; align-items: center; gap: 8px; padding: 12px 12px 0; }
+      #search {
+        flex: 1; min-width: 0; margin: 0; padding: 8px 10px;
+        border: 1px solid var(--border); border-radius: 6px;
+        background: var(--bg); color: var(--text);
+      }
+      .icon-btn {
+        flex: none; display: inline-flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; padding: 0;
+        border: 1px solid var(--border); border-radius: 6px;
+        background: var(--chip); color: var(--text); cursor: pointer;
+      }
+      .icon-btn:hover { border-color: var(--accent); }
+      #script-count { padding: 8px 12px 4px; font-size: 11px; color: var(--muted); }
+      #script-list { overflow: auto; flex: 1; padding: 0 8px 12px; }
+      .branch { margin: 0; }
+      .branch-head {
+        display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+        cursor: pointer; color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; list-style: none;
+      }
+      .branch-head::-webkit-details-marker { display: none; }
+      .branch-head::before { content: '▸'; width: 1em; color: var(--muted); }
+      .branch[open] > .branch-head::before { content: '▾'; }
+      .branch-head .name { flex: 1; min-width: 0; }
+      .branch-head .count { font-size: 11px; opacity: 0.7; }
+      .branch-body { padding-left: 12px; }
+      .item {
+        display: block; width: 100%; text-align: left; padding: 6px 10px; margin-bottom: 2px;
+        border: none; border-radius: 6px; background: transparent; color: var(--text);
+        cursor: pointer; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .item:hover { background: var(--chip); }
+      .item.active { background: var(--accent-dim); outline: 1px solid var(--accent); }
+      #content { overflow: auto; padding: 20px 24px 40px; }
+      .hero h2 { margin: 0 0 6px; font-size: 22px; }
+      .hero h2 code { font: inherit; }
+      .hero p { margin: 0; color: var(--muted); max-width: 72ch; }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+      .chip {
+        font-size: 11px; padding: 2px 8px; border-radius: 999px;
+        background: var(--chip); border: 1px solid var(--border); color: var(--muted);
+      }
+      .chip.ok { color: var(--ok); border-color: rgba(63, 185, 80, 0.4); }
+      .chip.fail { color: var(--fail); border-color: rgba(248, 81, 73, 0.4); }
+      .toolbar { margin: 16px 0; }
+      .btn {
+        padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;
+        background: var(--chip); color: var(--text); cursor: pointer;
+      }
+      .btn:hover { border-color: var(--accent); }
+      .btn:disabled { opacity: 0.5; cursor: default; }
+      .section { margin-top: 20px; }
+      .section h2 {
+        margin: 0 0 8px; font-size: 12px; text-transform: uppercase;
+        letter-spacing: 0.04em; color: var(--muted);
+      }
+      pre {
+        margin: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px;
+        background: var(--panel); overflow: auto; max-height: 320px;
+        white-space: pre-wrap; word-break: break-word;
+        font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .empty, .muted { color: var(--muted); }
+      .empty { padding: 16px; }
+      @container scripts (max-width: 720px) {
+        #app { grid-template-columns: 1fr; }
+        aside { max-height: 40vh; border-right: none; border-bottom: 1px solid var(--border); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="./config.js"></script>
+    <script src="./hub-client.js"></script>
+  </body>
+</html>
