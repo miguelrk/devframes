@@ -1,33 +1,20 @@
 # devframes
 
-Private pnpm workspace of portable **Devframe factories** for Vite DevTools. Each package exports a `createXDevframe` or `createXLauncher` factory. The host wraps iframe factories with `createPluginFromDevframe` from `@vitejs/devtools-kit/node`.
+Vite DevTools panels and launchers.
 
-These packages are **not published to npm**. Install via `github:` subdirectory or local `file:`.
+> [!NOTE]
+> DevTools is the dock that opens DevFrames. A codebase keeps a `devtools/` folder that imports or defines the local DevFrames. DevTools embeds DevFrames. Each tool is a DevFrame. DevTools is the host that mounts them.
 
 ## Packages
 
-| Package | Kind | Factory |
-|---|---|---|
-| `devframe-tanstack-query` | iframe | `createQueryDevframe` |
-| `devframe-scripts` | iframe + RPC | `createScriptsDevframe` |
-| `devframe-webmcp` | iframe | `createWebmcpDevframe` |
-| `devframe-mcp-inspector` | launcher | `createMcpInspectorLauncher` |
-| `devframe-drizzle-studio` | launcher | `createDrizzleStudioLauncher` |
-| `devframe-node-modules` | launcher | `createNodeModulesLauncher` |
-
-## Setup
-
-```bash
-pnpm install
-pnpm build
-pnpm typecheck
-```
-
-Build one package:
-
-```bash
-pnpm --filter devframe-scripts run build
-```
+| Package | Kind | Description |
+| --- | --- | --- |
+| `devframe-tanstack-query` | iframe | TanStack Query inspector |
+| `devframe-scripts` | iframe | Host script runner |
+| `devframe-webmcp` | iframe | WebMCP tools |
+| `devframe-mcp-inspector` | launcher | MCP Inspector |
+| `devframe-drizzle-studio` | launcher | Drizzle Studio |
+| `devframe-node-modules` | launcher | node_modules inspector |
 
 ## Install in a consumer (no npm)
 
@@ -37,20 +24,19 @@ pnpm add "github:miguelrk/devframes#main&path:/packages/devframe-tanstack-query"
 pnpm add file:../devframes/packages/devframe-scripts
 ```
 
-Run `pnpm build` in this repo before `file:` or `github:` install. Client assets live under each package `dist/client/`. Commit `dist/` or add a `prepare` script if you install from GitHub without a build step.
+Run `pnpm build` in this repo before a `file:` or `github:` install. Client assets live under each package `dist/client/`. Commit `dist/` or add a `prepare` script if you install from GitHub without a build step.
 
-## Host usage
+## Development
 
-```typescript
-import { createPluginFromDevframe } from '@vitejs/devtools-kit/node'
-import { createQueryDevframe, publishQueryClient } from 'devframe-tanstack-query'
+### Root
 
-publishQueryClient(queryClient)
+- `pnpm install`
+- `pnpm build`
+- `pnpm typecheck`
 
-const definition = await createQueryDevframe({ groupId: 'my-app' })
-addVitePlugin(createPluginFromDevframe(definition, { dock: { groupId: 'my-app' } }))
-```
+### Package
 
-WebMCP reads `document.modelContext.getTools()` when available. Optional fallback: `publishWebmcpRegistry` from `devframe-webmcp`.
-
-Launcher packages expect host CLIs on PATH (`mcp-inspector`, `drizzle-kit`, `node-modules-inspector`) unless you pass a custom `command` or `transports`.
+- `pnpm --dir packages/<package> build`
+- `pnpm --dir packages/<package> build:client`
+- `pnpm --dir packages/<package> build:node`
+- `pnpm --dir packages/<package> typecheck`
