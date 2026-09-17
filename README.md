@@ -1,9 +1,6 @@
 # devframes
 
-Vite DevTools panels and launchers.
-
-> [!NOTE]
-> DevTools is the dock that opens DevFrames. A codebase keeps a `devtools/` folder that imports or defines the local DevFrames. DevTools embeds DevFrames. Each tool is a DevFrame. DevTools is the host that mounts them.
+Vite DevTools panels and launchers. DevFrames are the tools that live in the DevTools dock. They are mounted by DevTools. Each tool is a DevFrame. DevTools is the host that mounts them.
 
 ## Packages
 
