@@ -1,5 +1,5 @@
 {
-  "name": "@miguelrk/devframe-node-modules",
+  "name": "devframe-node-modules",
   "private": true,
   "type": "module",
   "version": "0.0.0",

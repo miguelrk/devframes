@@ -8,12 +8,12 @@ These packages are **not published to npm**. Install via `github:` subdirectory 
 
 | Package | Kind | Factory |
 |---|---|---|
-| `@miguelrk/devframe-tanstack-query` | iframe | `createQueryDevframe` |
-| `@miguelrk/devframe-scripts` | iframe + RPC | `createScriptsDevframe` |
-| `@miguelrk/devframe-webmcp` | iframe | `createWebmcpDevframe` |
-| `@miguelrk/devframe-mcp-inspector` | launcher | `createMcpInspectorLauncher` |
-| `@miguelrk/devframe-drizzle-studio` | launcher | `createDrizzleStudioLauncher` |
-| `@miguelrk/devframe-node-modules` | launcher | `createNodeModulesLauncher` |
+| `devframe-tanstack-query` | iframe | `createQueryDevframe` |
+| `devframe-scripts` | iframe + RPC | `createScriptsDevframe` |
+| `devframe-webmcp` | iframe | `createWebmcpDevframe` |
+| `devframe-mcp-inspector` | launcher | `createMcpInspectorLauncher` |
+| `devframe-drizzle-studio` | launcher | `createDrizzleStudioLauncher` |
+| `devframe-node-modules` | launcher | `createNodeModulesLauncher` |
 
 ## Setup
 
@@ -26,7 +26,7 @@ pnpm typecheck
 Build one package:
 
 ```bash
-pnpm --filter @miguelrk/devframe-scripts run build
+pnpm --filter devframe-scripts run build
 ```
 
 ## Install in a consumer (no npm)
@@ -43,7 +43,7 @@ Run `pnpm build` in this repo before `file:` or `github:` install. Client assets
 
 ```typescript
 import { createPluginFromDevframe } from '@vitejs/devtools-kit/node'
-import { createQueryDevframe, publishQueryClient } from '@miguelrk/devframe-tanstack-query'
+import { createQueryDevframe, publishQueryClient } from 'devframe-tanstack-query'
 
 publishQueryClient(queryClient)
 
@@ -51,6 +51,6 @@ const definition = await createQueryDevframe({ groupId: 'my-app' })
 addVitePlugin(createPluginFromDevframe(definition, { dock: { groupId: 'my-app' } }))
 ```
 
-WebMCP reads `document.modelContext.getTools()` when available. Optional fallback: `publishWebmcpRegistry` from `@miguelrk/devframe-webmcp`.
+WebMCP reads `document.modelContext.getTools()` when available. Optional fallback: `publishWebmcpRegistry` from `devframe-webmcp`.
 
 Launcher packages expect host CLIs on PATH (`mcp-inspector`, `drizzle-kit`, `node-modules-inspector`) unless you pass a custom `command` or `transports`.

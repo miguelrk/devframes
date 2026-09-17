@@ -1,5 +1,5 @@
 {
-  "name": "@miguelrk/devframe-drizzle-studio",
+  "name": "devframe-drizzle-studio",
   "private": true,
   "type": "module",
   "version": "0.0.0",

@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bundledClientDir = path.join(packageDir, 'dist/client');
-const cacheNamespace = '@miguelrk/devframe-webmcp';
+const cacheNamespace = 'devframe-webmcp';
 export const prepareClientAssets = async (config, cacheKey) => {
     const cacheRoot = path.join(process.cwd(), 'node_modules', '.cache', cacheNamespace, cacheKey);
     fs.mkdirSync(cacheRoot, { recursive: true });

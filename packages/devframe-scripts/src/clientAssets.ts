@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const bundledClientDir = path.join(packageDir, 'dist/client')
-const cacheNamespace = '@miguelrk/devframe-scripts'
+const cacheNamespace = 'devframe-scripts'
 
 export const prepareClientAssets = async (
   config: Record<string, unknown>,

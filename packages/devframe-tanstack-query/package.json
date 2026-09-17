@@ -1,5 +1,5 @@
 {
-  "name": "@miguelrk/devframe-tanstack-query",
+  "name": "devframe-tanstack-query",
   "private": true,
   "type": "module",
   "version": "0.0.0",

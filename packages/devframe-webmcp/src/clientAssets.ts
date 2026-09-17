@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const bundledClientDir = path.join(packageDir, 'dist/client')
-const cacheNamespace = '@miguelrk/devframe-webmcp'
+const cacheNamespace = 'devframe-webmcp'
 
 export const prepareClientAssets = async (
   config: Record<string, unknown>,

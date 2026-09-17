@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const bundledClientDir = path.join(packageDir, 'dist/client')
-const cacheNamespace = '@miguelrk/devframe-tanstack-query'
+const cacheNamespace = 'devframe-tanstack-query'
 
 export const prepareClientAssets = async (
   config: Record<string, unknown>,
