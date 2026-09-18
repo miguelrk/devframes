@@ -15,22 +15,23 @@ Vite DevTools panels and launchers. DevFrames are the tools that live in the Dev
 
 ## Install (from GitHub)
 
-These packages are not on npm.
+These packages are not on [npm](https://npmjs.com).
 
 ```bash
-pnpm add "devframe-scripts@github:miguelrk/devframes#path:/packages/devframe-scripts"
-pnpm add "devframe-tanstack-query@github:miguelrk/devframes#main&path:/packages/devframe-tanstack-query"
-pnpm add file:../devframes/packages/devframe-scripts
+# default branch
+pnpm add "<package>@github:miguelrk/devframes#path:/packages/<package>"
+# tag
+pnpm add "<package>@github:miguelrk/devframes#v0.2.0&path:/packages/<package>"
+# commit
+pnpm add "<package>@github:miguelrk/devframes#a1b2c3d&path:/packages/<package>"
 ```
 
-Replace the package name and the `path:` folder with the package you want.
-
-> [!NOTE]
-> The `github:…#path:` specifier works with pnpm only.
-
-Run `pnpm build` in this repo before a `file:` or `github:` install. Client assets live under each package `dist/client/`. Commit `dist/` or add a `prepare` script if you install from GitHub without a build step.
+> [!WARNING]
+> `path:` works with pnpm only.
 
 ## Development
+
+Run `pnpm build` in this repo before a `github:` install. Client assets live under `dist/client/`. Commit `dist/` or add a `prepare` script if you install from GitHub without a local build.
 
 ### Root
 
