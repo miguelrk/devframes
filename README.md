@@ -15,19 +15,45 @@ Vite DevTools panels and launchers. DevFrames are the tools that live in the Dev
 
 ## Install (from GitHub)
 
-These packages are not on [npm](https://npmjs.com).
+These packages are not on [npm](https://npmjs.com). Pin a commit. `path:` works with [pnpm](https://pnpm.io) only.
 
 ```bash
-# default branch
-pnpm add "<package>@github:miguelrk/devframes#path:/packages/<package>"
-# tag
-pnpm add "<package>@github:miguelrk/devframes#v0.2.0&path:/packages/<package>"
-# commit
-pnpm add "<package>@github:miguelrk/devframes#a1b2c3d&path:/packages/<package>"
+pnpm add -D "<package>@github:miguelrk/devframes#<commit>&path:/packages/<package>"
 ```
 
-> [!WARNING]
-> `path:` works with pnpm only.
+A tag also pins a revision:
+
+```bash
+pnpm add -D "<package>@github:miguelrk/devframes#v0.2.0&path:/packages/<package>"
+```
+
+Example:
+
+```bash
+pnpm add -D "devframe-webmcp@github:miguelrk/devframes#f346125160b40eedbafb749e363242d24aafbf6b&path:/packages/devframe-webmcp"
+```
+
+## Refresh
+
+`pnpm install` does not move a GitHub dependency to a new commit.
+
+After you push to this repo, refresh each consumer:
+
+```bash
+# Re-resolve the specifier and write the new commit into the lockfile
+pnpm update <package>
+```
+
+If `package.json` pins a commit (`#<commit>&path:`), change that commit first, then run `pnpm update <package>`.
+
+To track the default branch (lockfile still records the resolved commit):
+
+```bash
+pnpm add -D "<package>@github:miguelrk/devframes#path:/packages/<package>"
+pnpm update <package>
+```
+
+Restart the app after the update so the dock copies the new `dist/client`.
 
 ## Development
 
