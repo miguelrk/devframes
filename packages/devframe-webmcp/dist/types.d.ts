@@ -17,6 +17,16 @@ export type WebmcpToolRow = {
     description: string;
     inputSchema?: Record<string, unknown>;
     annotations?: WebmcpToolAnnotations;
+    type?: string;
+    subtype?: string;
+    scope?: string;
+    needsApproval?: boolean;
+    icon?: string;
+    color?: string;
+    group?: string;
+    scopeLabel?: string;
+    scopeIcon?: string;
+    scopeColor?: string;
 };
 export type WebmcpSyncStatus = {
     supported: boolean;
