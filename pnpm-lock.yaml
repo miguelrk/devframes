@@ -193,6 +193,24 @@ importers:
 
   .: {}
 
+  packages/devframe-comark-pdf:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.11
+      devframe:
+        specifier: 'catalog:'
+        version: 1.0.0(srvx@1.0.5)
+      esbuild:
+        specifier: ^0.25.12
+        version: 0.25.12
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
+
   packages/devframe-drizzle-studio:
     devDependencies:
       '@types/node':
