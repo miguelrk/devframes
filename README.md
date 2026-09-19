@@ -10,6 +10,7 @@ Vite DevTools panels and launchers. DevFrames are the tools that live in the Dev
 | `devframe-scripts` | iframe | Host script runner |
 | `devframe-webmcp` | iframe | WebMCP tools |
 | `devframe-comark-pdf` | iframe | Host Comark PDF templates |
+| `devframe-comark-email` | iframe | Host Comark email templates |
 | `devframe-mcp-inspector` | launcher | MCP Inspector |
 | `devframe-drizzle-studio` | launcher | Drizzle Studio |
 | `devframe-node-modules` | launcher | node_modules inspector |
