@@ -1,7 +1,9 @@
+import type { EditorView } from '@codemirror/view'
 import type { DevframeScopedClientContext } from 'devframe/client'
 import type { FormSchema, PdfTemplateDescription, PdfTemplateEntry } from '../src/types'
 import { connectDevframe } from 'devframe/client'
 import { buildInputForm, FORM_CSS } from './form'
+import { createTemplateEditor } from './template-editor'
 
 type TemplateDescription = ({ ok: true } & PdfTemplateDescription) | { ok: false, error: string }
 
@@ -52,6 +54,9 @@ const CSS = `
   .icon-btn.primary { background: #2563eb; border-color: #2563eb; color: white; }
   .icon-btn.primary:hover { background: #1d4ed8; }
   .panel { flex: 1; overflow: auto; }
+  .panel.template { overflow: hidden; }
+  #template-editor { height: 100%; min-height: 0; }
+  #template-editor .cm-editor { height: 100%; }
   iframe { width: 100%; height: 100%; border: none; background: white; }
   .diagnostics { padding: 16px; }
   .diag-item { padding: 6px 0; border-bottom: 1px solid #27272a; font-size: 12px; }
@@ -68,7 +73,8 @@ const inputByTemplate = new Map<string, Record<string, unknown>>()
 const unitByTemplate = new Map<string, string>()
 
 let selectedId = ''
-let selectedTab: 'input' | 'pdf' | 'diagnostics' = 'pdf'
+let selectedTab: 'input' | 'template' | 'pdf' | 'diagnostics' = 'pdf'
+let templateView: EditorView | null = null
 let inputMode: 'form' | 'json' = 'form'
 let treeMode: 'tree' | 'flat' = (sessionStorage.getItem(`${SCOPE}-mode`) as 'tree' | 'flat') || 'tree'
 let searchQuery = ''
@@ -182,6 +188,7 @@ const renderMainPanel = (): string => {
   const tabs = `
     <div class="tabs">
       <div class="tab ${selectedTab === 'input' ? 'active' : ''}" data-tab="input">Input${inputBadge ? ` (${inputBadge})` : ''}</div>
+      <div class="tab ${selectedTab === 'template' ? 'active' : ''}" data-tab="template">Template</div>
       <div class="tab ${selectedTab === 'pdf' ? 'active' : ''}" data-tab="pdf">PDF</div>
       <div class="tab ${selectedTab === 'diagnostics' ? 'active' : ''}" data-tab="diagnostics">Diagnostics</div>
       <div class="tab-actions">
@@ -198,6 +205,18 @@ const renderMainPanel = (): string => {
       return `${tabs}<div class="panel"><div class="empty">${escapeHtml(message)}</div></div>`
     }
     return `${tabs}<div class="panel"><div class="form-wrap" id="form-wrap"></div></div>`
+  }
+
+  if (selectedTab === 'template') {
+    if (!description) {
+      const failed = descriptions.get(selectedId)
+      const message = failed && !failed.ok ? failed.error : 'Loading contract…'
+      return `${tabs}<div class="panel"><div class="empty">${escapeHtml(message)}</div></div>`
+    }
+    if (!description.source) {
+      return `${tabs}<div class="panel"><div class="empty">This template has no markdown source.</div></div>`
+    }
+    return `${tabs}<div class="panel template"><div id="template-editor"></div></div>`
   }
 
   if (selectedTab === 'pdf') {
@@ -232,8 +251,21 @@ const openSelected = () => {
   window.open(url.toString(), '_blank', 'noopener,noreferrer')
 }
 
+const destroyTemplateEditor = () => {
+  templateView?.destroy()
+  templateView = null
+}
+
+const mountTemplateEditor = () => {
+  const mount = root?.querySelector('#template-editor')
+  const description = describedOk(selectedId)
+  if (!mount || !description?.source) return
+  templateView = createTemplateEditor(mount, description.source)
+}
+
 const render = () => {
   if (!root) return
+  destroyTemplateEditor()
   const activeId = document.activeElement instanceof HTMLElement ? document.activeElement.id : ''
   const searchEl = root.querySelector('#search') as HTMLInputElement | null
   const caret = searchEl ? searchEl.selectionStart : null
@@ -286,6 +318,7 @@ const render = () => {
   root.querySelector('#btn-open')?.addEventListener('click', openSelected)
 
   mountInputForm()
+  mountTemplateEditor()
 
   if (activeId) {
     const selector = typeof globalThis.CSS?.escape === 'function'

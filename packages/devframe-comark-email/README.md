@@ -12,6 +12,7 @@ const provider = {
     templateId,
     schema: { type: 'object', properties: {}, required: [] },
     sample: {},
+    source: '**{{ title }}**\n',
   }),
   render: async ({ templateId, unit, input }) => hostRender({ templateId, unit, input }),
 }
@@ -20,4 +21,4 @@ await createComarkEmailDevframe({ id: 'devframe-comark-email', groupId: 'app', p
 await writeTemplateEmails({ provider, outDir: '.data/email' })
 ```
 
-`schema` may be empty. `openUrl` is optional; the Open button is hidden when it is absent. `render` returns compiled HTML plus optional `subject` and `previewText`.
+`schema` may be empty. `openUrl` is optional; the Open button is hidden when it is absent. `source` is the raw Comark markdown for the Template tab. `render` returns compiled HTML plus optional `subject` and `previewText`.

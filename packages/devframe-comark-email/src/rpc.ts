@@ -40,6 +40,7 @@ const describeResult = z.union([
     }),
     sample: z.record(z.string(), z.unknown()),
     openUrl: z.string().nullable().optional(),
+    source: z.string().nullable().optional(),
   }),
   z.object({
     ok: z.literal(false),

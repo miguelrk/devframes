@@ -12,6 +12,7 @@ const provider = {
     templateId,
     schema: { type: 'object', properties: {}, required: [] },
     sample: {},
+    source: '::datatable{}\n::\n',
   }),
   render: async ({ templateId, unit, input }) => hostRender({ templateId, unit, input }),
 }
@@ -20,4 +21,4 @@ await createComarkPdfDevframe({ id: 'devframe-comark-pdf', groupId: 'app', provi
 await writeTemplatePdfs({ provider, outDir: '.data/pdf' })
 ```
 
-`schema` may be empty. `openUrl` is optional; the Open button is hidden when it is absent.
+`schema` may be empty. `openUrl` is optional; the Open button is hidden when it is absent. `source` is the raw Comark markdown for the Template tab.

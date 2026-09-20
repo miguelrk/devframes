@@ -16,5 +16,6 @@ await esbuild.build({
   format: 'iife',
   platform: 'browser',
   target: 'es2022',
+  minify: true,
   logLevel: 'info',
 })

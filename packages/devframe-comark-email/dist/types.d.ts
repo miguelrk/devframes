@@ -60,6 +60,11 @@ export type EmailTemplateDescription = {
      * Omit or leave null to hide Open.
      */
     openUrl?: string | null;
+    /**
+     * Raw Comark markdown for the Template tab.
+     * Omit or leave null when the host has no source to show.
+     */
+    source?: string | null;
 };
 export type EmailDiagnostics = {
     errors: string[];
