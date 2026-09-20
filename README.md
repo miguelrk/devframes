@@ -37,25 +37,21 @@ pnpm add -D "devframe-webmcp@github:miguelrk/devframes#f346125160b40eedbafb749e3
 
 ## Refresh
 
-`pnpm install` does not move a GitHub dependency to a new commit.
-
-After you push to this repo, refresh each consumer:
+`pnpm install` does not move a GitHub `#<commit>` pin. After you push this repo, run the updater in the consumer (no install in that repo):
 
 ```bash
-# Re-resolve the specifier and write the new commit into the lockfile
-pnpm update <package>
+pnpm dlx github:miguelrk/devframes#main
 ```
 
-If `package.json` pins a commit (`#<commit>&path:`), change that commit first, then run `pnpm update <package>`.
+That command reads `package.json` in the current directory, writes one SHA into every `github:miguelrk/devframes#…&path:` dock, then runs `pnpm install`.
 
-To track the default branch (lockfile still records the resolved commit):
+`DEVFRAMES_REF` or `--ref=<branch>` selects the branch (default `main`). Restart the app after the install.
+
+To run the file from GitHub without `dlx`:
 
 ```bash
-pnpm add -D "<package>@github:miguelrk/devframes#path:/packages/<package>"
-pnpm update <package>
+curl -fsSL https://raw.githubusercontent.com/miguelrk/devframes/main/update.mjs | node --input-type=module
 ```
-
-Restart the app after the update so the dock copies the new `dist/client`.
 
 ## Development
 

@@ -6,6 +6,9 @@
   "engines": {
     "node": ">=26.1.0"
   },
+  "bin": {
+    "devframes": "./update.mjs"
+  },
   "scripts": {
     "build": "pnpm -r run build",
     "typecheck": "pnpm -r run typecheck"
