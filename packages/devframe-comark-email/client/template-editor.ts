@@ -18,7 +18,7 @@ import {
 
 const blockDirective = Decoration.mark({ class: 'cm-comark-block' })
 const inlineDirective = Decoration.mark({ class: 'cm-comark-inline' })
-const knapTag = Decoration.mark({ class: 'cm-comark-knap' })
+const bindingTag = Decoration.mark({ class: 'cm-comark-binding' })
 
 const blockDecorator = new MatchDecorator({
   regexp: /:{2,}[a-z$][\w$.-]*(?:\{[^}\n]*\})?/g,
@@ -30,9 +30,9 @@ const inlineDecorator = new MatchDecorator({
   decoration: () => inlineDirective,
 })
 
-const knapDecorator = new MatchDecorator({
-  regexp: /\{\{[^{}\n]*\}\}|\{\%[^%\n]*\%\}|\{\#[^#\n]*\#\}/g,
-  decoration: () => knapTag,
+const bindingDecorator = new MatchDecorator({
+  regexp: /\{\{[^{}\n]*\}\}/g,
+  decoration: () => bindingTag,
 })
 
 const createHighlightPlugin = (decorator: MatchDecorator) =>
@@ -49,14 +49,14 @@ const createHighlightPlugin = (decorator: MatchDecorator) =>
 const comarkHighlight = [
   createHighlightPlugin(blockDecorator),
   createHighlightPlugin(inlineDecorator),
-  createHighlightPlugin(knapDecorator),
+  createHighlightPlugin(bindingDecorator),
   EditorView.baseTheme({
     '&light .cm-comark-block': { color: '#4078f2', fontWeight: '600' },
     '&dark .cm-comark-block': { color: '#61afef', fontWeight: '600' },
     '&light .cm-comark-inline': { color: '#a626a4', fontWeight: '500' },
     '&dark .cm-comark-inline': { color: '#c678dd', fontWeight: '500' },
-    '&light .cm-comark-knap': { color: '#c18401' },
-    '&dark .cm-comark-knap': { color: '#d19a66' },
+    '&light .cm-comark-binding': { color: '#c18401' },
+    '&dark .cm-comark-binding': { color: '#d19a66' },
   }),
 ]
 
