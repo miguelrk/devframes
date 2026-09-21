@@ -2,10 +2,12 @@ import { defineRpcFunction } from 'devframe';
 import { z } from 'zod/v4';
 const templateIdArgs = z.object({
     templateId: z.string().min(1),
+    locale: z.string().optional(),
 });
 const renderArgs = z.object({
     templateId: z.string().min(1),
     unit: z.string().optional(),
+    locale: z.string().optional(),
     input: z.record(z.string(), z.unknown()).optional(),
 });
 const diagnosticsSchema = z.object({
@@ -30,6 +32,8 @@ const describeResult = z.union([
         sample: z.record(z.string(), z.unknown()),
         openUrl: z.string().nullable().optional(),
         source: z.string().nullable().optional(),
+        locales: z.array(z.string()).optional(),
+        locale: z.string().optional(),
     }),
     z.object({
         ok: z.literal(false),
@@ -113,7 +117,7 @@ export const registerComarkEmailRpc = (ctx, options) => {
         args: [templateIdArgs],
         returns: describeResult,
         setup: () => ({
-            handler: async ({ templateId }) => provider.describe({ templateId }),
+            handler: async ({ templateId, locale }) => provider.describe({ templateId, locale }),
         }),
     }), true);
     scoped.rpc.register(defineRpcFunction({

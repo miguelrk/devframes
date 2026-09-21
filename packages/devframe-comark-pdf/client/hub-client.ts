@@ -53,6 +53,7 @@ const CSS = `
   .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .icon-btn.primary { background: #2563eb; border-color: #2563eb; color: white; }
   .icon-btn.primary:hover { background: #1d4ed8; }
+  .tab-actions select { background: #18181b; border: 1px solid #3f3f46; border-radius: 4px; color: #e5e7eb; padding: 2px 6px; font: inherit; height: 28px; }
   .panel { flex: 1; overflow: auto; }
   .panel.template { overflow: hidden; }
   #template-editor { height: 100%; min-height: 0; }
@@ -71,6 +72,8 @@ const diagByTemplate = new Map<string, DiagnosticsResult>()
 const descriptions = new Map<string, TemplateDescription>()
 const inputByTemplate = new Map<string, Record<string, unknown>>()
 const unitByTemplate = new Map<string, string>()
+const localeByTemplate = new Map<string, string>()
+const DEFAULT_LOCALE = 'es'
 
 let selectedId = ''
 let selectedTab: 'input' | 'template' | 'pdf' | 'diagnostics' = 'pdf'
@@ -101,18 +104,28 @@ const siteOrigin = (): string => {
   }
 }
 
+const selectedLocale = (id: string): string => localeByTemplate.get(id) ?? DEFAULT_LOCALE
+
+const describeKey = (id: string, locale: string): string => `${id}:${locale}`
+
 const describedOk = (id: string) => {
-  const description = descriptions.get(id)
+  const description = descriptions.get(describeKey(id, selectedLocale(id)))
   return description?.ok ? description : null
 }
 
 const describeSelected = async (id: string): Promise<void> => {
-  if (descriptions.has(id) || !scoped) return
+  if (!scoped) return
+  const locale = selectedLocale(id)
+  const key = describeKey(id, locale)
+  if (descriptions.has(key)) return
 
-  const description = await scoped.rpc.call('describe-template', { templateId: id }) as TemplateDescription
-  descriptions.set(id, description)
+  const description = await scoped.rpc.call('describe-template', { templateId: id, locale }) as TemplateDescription
+  descriptions.set(key, description)
   if (!description.ok) return
 
+  if (!localeByTemplate.has(id)) {
+    localeByTemplate.set(id, description.locale ?? description.locales?.[0] ?? DEFAULT_LOCALE)
+  }
   if (!unitByTemplate.has(id)) {
     const fallback = description.previewUnit ?? description.unit?.options[0]?.value
     if (fallback) unitByTemplate.set(id, fallback)
@@ -184,6 +197,11 @@ const renderMainPanel = (): string => {
   const inputCount = description ? Object.keys(description.schema.properties).length : 0
   const inputBadge = description?.unit ? inputCount + 1 : inputCount
   const canOpen = Boolean(description?.openUrl)
+  const locales = description?.locales ?? []
+  const locale = selectedLocale(selectedId)
+  const localeControl = locales.length > 1
+    ? `<select id="locale-select" title="Locale">${locales.map(code => `<option value="${escapeHtml(code)}" ${code === locale ? 'selected' : ''}>${escapeHtml(code)}</option>`).join('')}</select>`
+    : ''
 
   const tabs = `
     <div class="tabs">
@@ -192,6 +210,7 @@ const renderMainPanel = (): string => {
       <div class="tab ${selectedTab === 'pdf' ? 'active' : ''}" data-tab="pdf">PDF</div>
       <div class="tab ${selectedTab === 'diagnostics' ? 'active' : ''}" data-tab="diagnostics">Diagnostics</div>
       <div class="tab-actions">
+        ${localeControl}
         <button class="icon-btn primary" id="btn-render" title="Render" ${rendering ? 'disabled' : ''}>${renderIcon}</button>
         ${canOpen ? `<button class="icon-btn" id="btn-open" title="Open via host HTTP route">${openIcon}</button>` : ''}
       </div>
@@ -200,7 +219,7 @@ const renderMainPanel = (): string => {
 
   if (selectedTab === 'input') {
     if (!description) {
-      const failed = descriptions.get(selectedId)
+      const failed = descriptions.get(describeKey(selectedId, selectedLocale(selectedId)))
       const message = failed && !failed.ok ? failed.error : 'Loading contract…'
       return `${tabs}<div class="panel"><div class="empty">${escapeHtml(message)}</div></div>`
     }
@@ -209,7 +228,7 @@ const renderMainPanel = (): string => {
 
   if (selectedTab === 'template') {
     if (!description) {
-      const failed = descriptions.get(selectedId)
+      const failed = descriptions.get(describeKey(selectedId, selectedLocale(selectedId)))
       const message = failed && !failed.ok ? failed.error : 'Loading contract…'
       return `${tabs}<div class="panel"><div class="empty">${escapeHtml(message)}</div></div>`
     }
@@ -248,6 +267,8 @@ const openSelected = () => {
   const url = new URL(description.openUrl, siteOrigin())
   const unit = unitByTemplate.get(selectedId)
   if (unit) url.searchParams.set('unit', unit)
+  const locale = localeByTemplate.get(selectedId)
+  if (locale) url.searchParams.set('locale', locale)
   window.open(url.toString(), '_blank', 'noopener,noreferrer')
 }
 
@@ -316,6 +337,16 @@ const render = () => {
 
   root.querySelector('#btn-render')?.addEventListener('click', renderSelected)
   root.querySelector('#btn-open')?.addEventListener('click', openSelected)
+  root.querySelector('#locale-select')?.addEventListener('change', (event) => {
+    const id = selectedId
+    localeByTemplate.set(id, (event.target as HTMLSelectElement).value)
+    void (async () => {
+      await describeSelected(id)
+      if (selectedId !== id) return
+      render()
+      await renderSelected()
+    })()
+  })
 
   mountInputForm()
   mountTemplateEditor()
@@ -418,6 +449,7 @@ const renderSelected = async () => {
       {
         templateId: id,
         unit: unitByTemplate.get(id) || undefined,
+        locale: localeByTemplate.get(id) || undefined,
         input: inputByTemplate.get(id) ?? {},
       },
     ) as RenderResult

@@ -65,6 +65,10 @@ export type PdfTemplateDescription = {
      * Omit or leave null when the host has no source to show.
      */
     source?: string | null;
+    /** Locales that have a template file. Folder name is the locale. */
+    locales?: string[];
+    /** Locale of `source` and of this describe result. */
+    locale?: string;
 };
 export type PdfDiagnostics = {
     errors: string[];
@@ -73,6 +77,7 @@ export type PdfDiagnostics = {
 export type PdfRenderArgs = {
     templateId: string;
     unit?: string;
+    locale?: string;
     input?: Record<string, unknown>;
 };
 export type PdfRenderResult = {
@@ -93,6 +98,7 @@ export type PdfTemplatesProvider = {
     list: () => Promise<PdfTemplateEntry[]> | PdfTemplateEntry[];
     describe: (args: {
         templateId: string;
+        locale?: string;
     }) => Promise<({
         ok: true;
     } & PdfTemplateDescription) | {

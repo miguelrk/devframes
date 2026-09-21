@@ -72,6 +72,10 @@ export type EmailTemplateDescription = {
    * Omit or leave null when the host has no source to show.
    */
   source?: string | null
+  /** Locales that have a template file. Folder name is the locale. */
+  locales?: string[]
+  /** Locale of `source` and of this describe result. */
+  locale?: string
 }
 
 export type EmailDiagnostics = {
@@ -82,6 +86,7 @@ export type EmailDiagnostics = {
 export type EmailRenderArgs = {
   templateId: string
   unit?: string
+  locale?: string
   input?: Record<string, unknown>
 }
 
@@ -105,7 +110,7 @@ export type EmailRenderAllResult = {
  */
 export type EmailTemplatesProvider = {
   list: () => Promise<EmailTemplateEntry[]> | EmailTemplateEntry[]
-  describe: (args: { templateId: string }) => Promise<
+  describe: (args: { templateId: string, locale?: string }) => Promise<
     | ({ ok: true } & EmailTemplateDescription)
     | { ok: false, error: string }
   >
