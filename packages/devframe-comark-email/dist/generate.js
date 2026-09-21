@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 const DEFAULT_LOCALE = 'es';
-const fileNameFor = (id, locale) => locale ? `${id.replaceAll('/', '-')}.${locale}.html` : `${id.replaceAll('/', '-')}.html`;
+const fileNameFor = (id, locale) => `${id.replaceAll('/', '-')}.${locale}.html`;
 const localesFor = (description) => {
     if (description.locales?.length)
         return description.locales;
@@ -11,8 +11,7 @@ const localesFor = (description) => {
 };
 /**
  * Render every host template (or a subset) to `{outDir}/{id}.{locale}.html`.
- * Writes `{id}.html` as the default-locale (`es`) alias.
- * Uses `describe` sample + preview unit, then `render`.
+ * One file per locale. Uses `describe` sample + preview unit, then `render`.
  */
 export const writeTemplateEmails = async (options) => {
     const log = options.log ?? (() => { });
@@ -63,11 +62,6 @@ export const writeTemplateEmails = async (options) => {
                     const localePath = join(options.outDir, fileNameFor(template.id, locale));
                     writeFileSync(localePath, result.html);
                     paths.push(localePath);
-                    if (locale === DEFAULT_LOCALE) {
-                        const aliasPath = join(options.outDir, fileNameFor(template.id));
-                        writeFileSync(aliasPath, result.html);
-                        paths.push(aliasPath);
-                    }
                     if (result.diagnostics.errors.length) {
                         fail++;
                         log(`WARN ${template.id} (${locale}): ${result.diagnostics.errors.join('; ')}`);

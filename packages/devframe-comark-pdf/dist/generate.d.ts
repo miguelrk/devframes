@@ -8,8 +8,7 @@ export type WriteTemplatePdfsOptions = {
 };
 /**
  * Render every host template (or a subset) to `{outDir}/{id}.{locale}.pdf`.
- * Writes `{id}.pdf` as the default-locale (`es`) alias.
- * Uses `describe` sample + preview unit, then `render`.
+ * One file per locale. Uses `describe` sample + preview unit, then `render`.
  */
 export declare const writeTemplatePdfs: (options: WriteTemplatePdfsOptions) => Promise<{
     ok: number;

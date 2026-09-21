@@ -12,8 +12,8 @@ export type WriteTemplateEmailsOptions = {
 
 const DEFAULT_LOCALE = 'es'
 
-const fileNameFor = (id: string, locale?: string): string =>
-  locale ? `${id.replaceAll('/', '-')}.${locale}.html` : `${id.replaceAll('/', '-')}.html`
+const fileNameFor = (id: string, locale: string): string =>
+  `${id.replaceAll('/', '-')}.${locale}.html`
 
 const localesFor = (description: { locales?: string[], locale?: string }): string[] => {
   if (description.locales?.length) return description.locales
@@ -23,8 +23,7 @@ const localesFor = (description: { locales?: string[], locale?: string }): strin
 
 /**
  * Render every host template (or a subset) to `{outDir}/{id}.{locale}.html`.
- * Writes `{id}.html` as the default-locale (`es`) alias.
- * Uses `describe` sample + preview unit, then `render`.
+ * One file per locale. Uses `describe` sample + preview unit, then `render`.
  */
 export const writeTemplateEmails = async (options: WriteTemplateEmailsOptions): Promise<{
   ok: number
@@ -85,12 +84,6 @@ export const writeTemplateEmails = async (options: WriteTemplateEmailsOptions): 
           const localePath = join(options.outDir, fileNameFor(template.id, locale))
           writeFileSync(localePath, result.html)
           paths.push(localePath)
-
-          if (locale === DEFAULT_LOCALE) {
-            const aliasPath = join(options.outDir, fileNameFor(template.id))
-            writeFileSync(aliasPath, result.html)
-            paths.push(aliasPath)
-          }
 
           if (result.diagnostics.errors.length) {
             fail++

@@ -12,8 +12,8 @@ export type WriteTemplatePdfsOptions = {
 
 const DEFAULT_LOCALE = 'es'
 
-const fileNameFor = (id: string, locale?: string): string =>
-  locale ? `${id.replaceAll('/', '-')}.${locale}.pdf` : `${id.replaceAll('/', '-')}.pdf`
+const fileNameFor = (id: string, locale: string): string =>
+  `${id.replaceAll('/', '-')}.${locale}.pdf`
 
 const localesFor = (description: { locales?: string[], locale?: string }): string[] => {
   if (description.locales?.length) return description.locales
@@ -23,8 +23,7 @@ const localesFor = (description: { locales?: string[], locale?: string }): strin
 
 /**
  * Render every host template (or a subset) to `{outDir}/{id}.{locale}.pdf`.
- * Writes `{id}.pdf` as the default-locale (`es`) alias.
- * Uses `describe` sample + preview unit, then `render`.
+ * One file per locale. Uses `describe` sample + preview unit, then `render`.
  */
 export const writeTemplatePdfs = async (options: WriteTemplatePdfsOptions): Promise<{
   ok: number
@@ -86,12 +85,6 @@ export const writeTemplatePdfs = async (options: WriteTemplatePdfsOptions): Prom
           const localePath = join(options.outDir, fileNameFor(template.id, locale))
           writeFileSync(localePath, bytes)
           paths.push(localePath)
-
-          if (locale === DEFAULT_LOCALE) {
-            const aliasPath = join(options.outDir, fileNameFor(template.id))
-            writeFileSync(aliasPath, bytes)
-            paths.push(aliasPath)
-          }
 
           if (result.diagnostics.errors.length) {
             fail++

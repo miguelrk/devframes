@@ -8,8 +8,7 @@ export type WriteTemplateEmailsOptions = {
 };
 /**
  * Render every host template (or a subset) to `{outDir}/{id}.{locale}.html`.
- * Writes `{id}.html` as the default-locale (`es`) alias.
- * Uses `describe` sample + preview unit, then `render`.
+ * One file per locale. Uses `describe` sample + preview unit, then `render`.
  */
 export declare const writeTemplateEmails: (options: WriteTemplateEmailsOptions) => Promise<{
     ok: number;
