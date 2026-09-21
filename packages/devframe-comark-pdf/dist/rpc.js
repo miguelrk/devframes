@@ -32,6 +32,7 @@ const describeResult = z.union([
         sample: z.record(z.string(), z.unknown()),
         openUrl: z.string().nullable().optional(),
         source: z.string().nullable().optional(),
+        sourcePath: z.string().nullable().optional(),
         locales: z.array(z.string()).optional(),
         locale: z.string().optional(),
     }),
@@ -46,6 +47,40 @@ const renderResult = z.object({
     error: z.string().optional(),
     diagnostics: diagnosticsSchema,
 });
+const INITIAL_REVISION = {
+    n: 0,
+    templateId: null,
+    locale: null,
+    relist: false,
+};
+const WATCH_DEBOUNCE_MS = 80;
+const bindTemplateWatch = async (scoped, watch) => {
+    const revision = await scoped.rpc.sharedState('templates-revision', {
+        initialValue: INITIAL_REVISION,
+    });
+    let timer;
+    let pending = {};
+    let pendingRelist = false;
+    const flush = () => {
+        revision.mutate((draft) => {
+            draft.n += 1;
+            draft.templateId = pending.templateId ?? null;
+            draft.locale = pending.locale ?? null;
+            draft.relist = pendingRelist;
+        });
+        pending = {};
+        pendingRelist = false;
+    };
+    await watch((event) => {
+        if (!event.templateId)
+            pendingRelist = true;
+        else if (pending.templateId && pending.templateId !== event.templateId)
+            pendingRelist = true;
+        pending = event;
+        clearTimeout(timer);
+        timer = setTimeout(flush, WATCH_DEBOUNCE_MS);
+    });
+};
 const failed = (error) => {
     const message = error instanceof Error ? error.message : String(error);
     return {
@@ -99,9 +134,12 @@ const renderAllFromProvider = async (provider) => {
     await Promise.all(workers);
     return results;
 };
-export const registerComarkPdfRpc = (ctx, options) => {
+export const registerComarkPdfRpc = async (ctx, options) => {
     const scoped = ctx.scope(options.id);
     const { provider } = options;
+    await scoped.rpc.sharedState('templates-revision', {
+        initialValue: INITIAL_REVISION,
+    });
     scoped.rpc.register(defineRpcFunction({
         name: 'list-templates',
         type: 'query',
@@ -141,5 +179,8 @@ export const registerComarkPdfRpc = (ctx, options) => {
         jsonSerializable: true,
         handler: () => renderAllFromProvider(provider),
     }), true);
+    if (ctx.mode === 'dev' && provider.watch) {
+        await bindTemplateWatch(scoped, provider.watch);
+    }
 };
 //# sourceMappingURL=rpc.js.map

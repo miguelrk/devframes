@@ -18,4 +18,6 @@ export {
   type PdfTemplateEntry,
   type PdfTemplatesProvider,
   type PdfTemplateUnit,
+  type TemplatesRevision,
+  type TemplateWatchEvent,
 } from './types.js'

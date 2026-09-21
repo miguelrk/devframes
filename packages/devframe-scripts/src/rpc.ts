@@ -1,11 +1,12 @@
-import type { DevframeNodeContext } from 'devframe'
+import type { DevframeNodeContext, DevframeScopedNodeContext } from 'devframe'
+import type { ScriptAllowlistEntry, ScriptEntry, ScriptsRevision } from './types.js'
+import type { RunCommand } from './runCommand.js'
 import { spawn } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { defineRpcFunction } from 'devframe'
 import { z } from 'zod/v4'
-import { detectRunCommand, formatRunCommand, type RunCommand } from './runCommand.js'
-import type { ScriptAllowlistEntry, ScriptEntry } from './types.js'
+import { detectRunCommand, formatRunCommand } from './runCommand.js'
 
 export type ScriptsRpcOptions = {
   id: string
@@ -20,6 +21,12 @@ export type ScriptsRpcOptions = {
 }
 
 const DEFAULT_TIMEOUT_MS = 600_000
+const WATCH_DEBOUNCE_MS = 80
+
+const INITIAL_REVISION: ScriptsRevision = { n: 0 }
+
+const resolvePackageJsonPath = (options: ScriptsRpcOptions): string =>
+  options.packageJsonPath ?? path.join(options.cwd ?? process.cwd(), 'package.json')
 
 const isLifecycleScript = (id: string): boolean =>
   id.startsWith('pre') || id.startsWith('post')
@@ -49,7 +56,7 @@ const readPackageJson = (packageJsonPath: string): {
 }
 
 const buildScriptList = (options: ScriptsRpcOptions): ScriptEntry[] => {
-  const packageJsonPath = options.packageJsonPath ?? path.join(options.cwd ?? process.cwd(), 'package.json')
+  const packageJsonPath = resolvePackageJsonPath(options)
   const { scripts, packageManager } = readPackageJson(packageJsonPath)
   const runCommand = options.runCommand ?? detectRunCommand(packageManager)
 
@@ -102,7 +109,7 @@ const runScript = (
   const entry = entries.find(item => item.id === id)
   if (!entry) notFound(`Unknown script: ${id}`)
 
-  const packageJsonPath = options.packageJsonPath ?? path.join(options.cwd ?? process.cwd(), 'package.json')
+  const packageJsonPath = resolvePackageJsonPath(options)
   const { packageManager } = readPackageJson(packageJsonPath)
   const runCommand = options.runCommand ?? detectRunCommand(packageManager)
   const cwd = options.cwd ?? process.cwd()
@@ -143,8 +150,36 @@ const runScript = (
   })
 }
 
-export const registerScriptsRpc = (ctx: DevframeNodeContext, options: ScriptsRpcOptions): void => {
+const bindScriptsWatch = async (
+  scoped: DevframeScopedNodeContext,
+  packageJsonPath: string,
+): Promise<void> => {
+  if (!fs.existsSync(packageJsonPath)) return
+
+  const revision = await scoped.rpc.sharedState<ScriptsRevision>('scripts-revision', {
+    initialValue: INITIAL_REVISION,
+  })
+
+  let timer: ReturnType<typeof setTimeout> | undefined
+  fs.watch(packageJsonPath, () => {
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      revision.mutate((draft: ScriptsRevision) => {
+        draft.n += 1
+      })
+    }, WATCH_DEBOUNCE_MS)
+  })
+}
+
+export const registerScriptsRpc = async (
+  ctx: DevframeNodeContext,
+  options: ScriptsRpcOptions,
+): Promise<void> => {
   const scoped = ctx.scope(options.id)
+
+  await scoped.rpc.sharedState<ScriptsRevision>('scripts-revision', {
+    initialValue: INITIAL_REVISION,
+  })
 
   scoped.rpc.register(defineRpcFunction({
     name: 'list-scripts',
@@ -170,4 +205,8 @@ export const registerScriptsRpc = (ctx: DevframeNodeContext, options: ScriptsRpc
       handler: async ({ id }) => runScript(options, id),
     }),
   }))
+
+  if (ctx.mode === 'dev') {
+    await bindScriptsWatch(scoped, resolvePackageJsonPath(options))
+  }
 }

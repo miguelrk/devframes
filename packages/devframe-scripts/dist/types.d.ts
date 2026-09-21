@@ -17,4 +17,7 @@ export type ScriptAllowlistEntry = {
     description?: string;
     command?: string;
 };
+export type ScriptsRevision = {
+    n: number;
+};
 //# sourceMappingURL=types.d.ts.map

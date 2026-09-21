@@ -5,6 +5,9 @@ import { defineRpcFunction } from 'devframe';
 import { z } from 'zod/v4';
 import { detectRunCommand, formatRunCommand } from './runCommand.js';
 const DEFAULT_TIMEOUT_MS = 600_000;
+const WATCH_DEBOUNCE_MS = 80;
+const INITIAL_REVISION = { n: 0 };
+const resolvePackageJsonPath = (options) => options.packageJsonPath ?? path.join(options.cwd ?? process.cwd(), 'package.json');
 const isLifecycleScript = (id) => id.startsWith('pre') || id.startsWith('post');
 const matchesPattern = (id, patterns) => patterns.some((pattern) => {
     if (pattern.includes('*')) {
@@ -22,7 +25,7 @@ const readPackageJson = (packageJsonPath) => {
     };
 };
 const buildScriptList = (options) => {
-    const packageJsonPath = options.packageJsonPath ?? path.join(options.cwd ?? process.cwd(), 'package.json');
+    const packageJsonPath = resolvePackageJsonPath(options);
     const { scripts, packageManager } = readPackageJson(packageJsonPath);
     const runCommand = options.runCommand ?? detectRunCommand(packageManager);
     if (options.scripts?.length) {
@@ -64,7 +67,7 @@ const runScript = (options, id) => {
     const entry = entries.find(item => item.id === id);
     if (!entry)
         notFound(`Unknown script: ${id}`);
-    const packageJsonPath = options.packageJsonPath ?? path.join(options.cwd ?? process.cwd(), 'package.json');
+    const packageJsonPath = resolvePackageJsonPath(options);
     const { packageManager } = readPackageJson(packageJsonPath);
     const runCommand = options.runCommand ?? detectRunCommand(packageManager);
     const cwd = options.cwd ?? process.cwd();
@@ -103,8 +106,27 @@ const runScript = (options, id) => {
         });
     });
 };
-export const registerScriptsRpc = (ctx, options) => {
+const bindScriptsWatch = async (scoped, packageJsonPath) => {
+    if (!fs.existsSync(packageJsonPath))
+        return;
+    const revision = await scoped.rpc.sharedState('scripts-revision', {
+        initialValue: INITIAL_REVISION,
+    });
+    let timer;
+    fs.watch(packageJsonPath, () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            revision.mutate((draft) => {
+                draft.n += 1;
+            });
+        }, WATCH_DEBOUNCE_MS);
+    });
+};
+export const registerScriptsRpc = async (ctx, options) => {
     const scoped = ctx.scope(options.id);
+    await scoped.rpc.sharedState('scripts-revision', {
+        initialValue: INITIAL_REVISION,
+    });
     scoped.rpc.register(defineRpcFunction({
         name: 'list-scripts',
         type: 'query',
@@ -128,5 +150,8 @@ export const registerScriptsRpc = (ctx, options) => {
             handler: async ({ id }) => runScript(options, id),
         }),
     }));
+    if (ctx.mode === 'dev') {
+        await bindScriptsWatch(scoped, resolvePackageJsonPath(options));
+    }
 };
 //# sourceMappingURL=rpc.js.map

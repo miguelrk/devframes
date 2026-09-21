@@ -4,5 +4,5 @@ export type ComarkEmailRpcOptions = {
     id: string;
     provider: EmailTemplatesProvider;
 };
-export declare const registerComarkEmailRpc: (ctx: DevframeNodeContext, options: ComarkEmailRpcOptions) => void;
+export declare const registerComarkEmailRpc: (ctx: DevframeNodeContext, options: ComarkEmailRpcOptions) => Promise<void>;
 //# sourceMappingURL=rpc.d.ts.map

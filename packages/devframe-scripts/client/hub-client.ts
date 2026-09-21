@@ -130,7 +130,7 @@ if (!mount) {
   void (async () => {
     const client = await connectDevframe()
     const rpc = client.scope(devframeId).rpc
-    const scripts = await rpc.call('list-scripts') as ScriptEntry[]
+    let scripts = await rpc.call('list-scripts') as ScriptEntry[]
 
     let activeId = scripts[0]?.id ?? null
     let filter = ''
@@ -301,6 +301,19 @@ if (!mount) {
       if (target.id !== 'search') return
       filter = target.value
       syncList()
+    })
+
+    const revision = await rpc.sharedState<{ n: number }>('scripts-revision')
+    revision.on('updated', (state) => {
+      if (state.n === 0) return
+      void (async () => {
+        scripts = await rpc.call('list-scripts') as ScriptEntry[]
+        if (activeId && !scripts.some(item => item.id === activeId)) {
+          activeId = scripts[0]?.id ?? null
+          result = null
+        }
+        render()
+      })()
     })
 
     render()

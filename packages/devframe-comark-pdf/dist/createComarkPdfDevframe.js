@@ -22,8 +22,9 @@ export const createComarkPdfDevframe = async (options) => {
         clientAssets,
         dock: { groupId },
         capabilities: { build: false },
-        setup: (ctx) => {
-            registerComarkPdfRpc(ctx, { id, provider: options.provider });
+        services: [{ package: '@devframes/service-open' }],
+        setup: async (ctx) => {
+            await registerComarkPdfRpc(ctx, { id, provider: options.provider });
         },
     });
 };

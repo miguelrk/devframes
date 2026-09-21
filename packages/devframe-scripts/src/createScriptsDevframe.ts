@@ -50,7 +50,7 @@ export const createScriptsDevframe = async (options: CreateScriptsDevframeOption
     dock: { groupId },
     capabilities: { build: false },
     setup: async (ctx) => {
-      registerScriptsRpc(ctx, rpcOptions)
+      await registerScriptsRpc(ctx, rpcOptions)
     },
   })
 }

@@ -1,6 +1,6 @@
 import type { DevframeNodeContext } from 'devframe';
-import { type RunCommand } from './runCommand.js';
 import type { ScriptAllowlistEntry } from './types.js';
+import type { RunCommand } from './runCommand.js';
 export type ScriptsRpcOptions = {
     id: string;
     cwd?: string;
@@ -12,5 +12,5 @@ export type ScriptsRpcOptions = {
     runCommand?: RunCommand;
     timeoutMs?: number;
 };
-export declare const registerScriptsRpc: (ctx: DevframeNodeContext, options: ScriptsRpcOptions) => void;
+export declare const registerScriptsRpc: (ctx: DevframeNodeContext, options: ScriptsRpcOptions) => Promise<void>;
 //# sourceMappingURL=rpc.d.ts.map

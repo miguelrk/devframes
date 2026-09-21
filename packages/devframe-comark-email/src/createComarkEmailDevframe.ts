@@ -30,8 +30,9 @@ export const createComarkEmailDevframe = async (options: CreateComarkEmailDevfra
     clientAssets,
     dock: { groupId },
     capabilities: { build: false },
-    setup: (ctx) => {
-      registerComarkEmailRpc(ctx, { id, provider: options.provider })
+    services: [{ package: '@devframes/service-open' }],
+    setup: async (ctx) => {
+      await registerComarkEmailRpc(ctx, { id, provider: options.provider })
     },
   })
 }

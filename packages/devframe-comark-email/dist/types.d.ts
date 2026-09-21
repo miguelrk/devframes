@@ -65,10 +65,26 @@ export type EmailTemplateDescription = {
      * Omit or leave null when the host has no source to show.
      */
     source?: string | null;
+    /**
+     * Absolute or workspace-relative path of `source`.
+     * The dock uses it to open the file in the user's editor.
+     */
+    sourcePath?: string | null;
     /** Locales that have a template file. Folder name is the locale. */
     locales?: string[];
     /** Locale of `source` and of this describe result. */
     locale?: string;
+};
+/** Host file-watch payload. Omit `templateId` when the catalog may have changed. */
+export type TemplateWatchEvent = {
+    templateId?: string;
+    locale?: string;
+};
+export type TemplatesRevision = {
+    n: number;
+    templateId: string | null;
+    locale: string | null;
+    relist: boolean;
 };
 export type EmailDiagnostics = {
     errors: string[];
@@ -109,5 +125,10 @@ export type EmailTemplatesProvider = {
     }>;
     render: (args: EmailRenderArgs) => Promise<EmailRenderResult>;
     renderAll?: () => Promise<EmailRenderAllResult[]>;
+    /**
+     * Optional. Call `emit` when a template file changes.
+     * Return an unsubscribe. The dock re-describes and re-renders.
+     */
+    watch?: (emit: (event: TemplateWatchEvent) => void) => (() => void) | Promise<() => void>;
 };
 //# sourceMappingURL=types.d.ts.map

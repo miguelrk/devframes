@@ -21,4 +21,4 @@ await createComarkPdfDevframe({ id: 'devframe-comark-pdf', groupId: 'app', provi
 await writeTemplatePdfs({ provider, outDir: '.data/pdf' })
 ```
 
-`schema` may be empty. `openUrl` is optional; the Open button is hidden when it is absent. `source` is the raw Comark markdown for the Template tab.
+`schema` may be empty. `openUrl` is optional; the Open button is hidden when it is absent. `source` is the raw Comark markdown for the Template tab. `sourcePath` opens that file in the user's editor through `@devframes/service-open`. Optional `watch(emit)` pushes file changes into shared state so the dock re-describes and re-renders without a reload.

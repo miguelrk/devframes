@@ -4,5 +4,5 @@ export type ComarkPdfRpcOptions = {
     id: string;
     provider: PdfTemplatesProvider;
 };
-export declare const registerComarkPdfRpc: (ctx: DevframeNodeContext, options: ComarkPdfRpcOptions) => void;
+export declare const registerComarkPdfRpc: (ctx: DevframeNodeContext, options: ComarkPdfRpcOptions) => Promise<void>;
 //# sourceMappingURL=rpc.d.ts.map

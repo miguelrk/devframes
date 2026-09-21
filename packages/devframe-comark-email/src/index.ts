@@ -18,4 +18,6 @@ export {
   type EmailTemplateUnit,
   type FormSchema,
   type JsonSchemaNode,
+  type TemplatesRevision,
+  type TemplateWatchEvent,
 } from './types.js'

@@ -1,6 +1,6 @@
 import type { EditorView } from '@codemirror/view'
 import type { DevframeScopedClientContext } from 'devframe/client'
-import type { EmailTemplateDescription, EmailTemplateEntry, FormSchema } from '../src/types'
+import type { EmailTemplateDescription, EmailTemplateEntry, FormSchema, TemplatesRevision } from '../src/types'
 import { connectDevframe } from 'devframe/client'
 import { buildInputForm, FORM_CSS } from './form'
 import { createTemplateEditor } from './template-editor'
@@ -100,6 +100,7 @@ let renderToken = 0
 
 let root: HTMLElement | null = null
 let scoped: DevframeScopedClientContext<typeof SCOPE> | null = null
+let canOpenEditor = false
 
 const escapeHtml = (value: string): string =>
   value
@@ -126,11 +127,11 @@ const describedOk = (id: string) => {
   return description?.ok ? description : null
 }
 
-const describeSelected = async (id: string): Promise<void> => {
+const describeSelected = async (id: string, force = false): Promise<void> => {
   if (!scoped) return
   const locale = selectedLocale(id)
   const key = describeKey(id, locale)
-  if (descriptions.has(key)) return
+  if (!force && descriptions.has(key)) return
 
   const description = await scoped.rpc.call('describe-template', { templateId: id, locale }) as TemplateDescription
   descriptions.set(key, description)
@@ -198,6 +199,7 @@ const renderTree = (): string => {
 }
 
 const openIcon = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3.5A1.5 1.5 0 0 0 2 4.5v8A1.5 1.5 0 0 0 3.5 14h8a1.5 1.5 0 0 0 1.5-1.5V10M10 2h4v4M7 9l7-7"/></svg>`
+const editorIcon = `<svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M181.66 146.34a8 8 0 0 1 0 11.32l-24 24a8 8 0 0 1-11.32-11.32L164.69 152l-18.35-18.34a8 8 0 0 1 11.32-11.32Zm-72-24a8 8 0 0 0-11.32 0l-24 24a8 8 0 0 0 0 11.32l24 24a8 8 0 0 0 11.32-11.32L91.31 152l18.35-18.34a8 8 0 0 0 0-11.32M216 88v128a16 16 0 0 1-16 16H56a16 16 0 0 1-16-16V40a16 16 0 0 1 16-16h96a8 8 0 0 1 5.66 2.34l56 56A8 8 0 0 1 216 88m-56-8h28.69L160 51.31Zm40 136V96h-48a8 8 0 0 1-8-8V40H56v176z"/></svg>`
 const renderIcon = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5L4 2.5z"/></svg>`
 const ICON_TREE = `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M2 2h5v2H2zm7 5h5v2H9zm0 5h5v2H9zM4 4v9h1.5V8.5H9V7H5.5V4z"/></svg>`
 const ICON_LIST = `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M2 3h12v1.5H2zm0 4.25h12v1.5H2zM2 11.5h12V13H2z"/></svg>`
@@ -221,6 +223,7 @@ const renderMainPanel = (): string => {
   const inputCount = description ? Object.keys(description.schema.properties).length : 0
   const inputBadge = description?.unit ? inputCount + 1 : inputCount
   const canOpen = Boolean(description?.openUrl)
+  const canEdit = canOpenEditor && Boolean(description?.sourcePath)
   const locales = description?.locales ?? []
   const locale = selectedLocale(selectedId)
   const localeControl = locales.length > 1
@@ -236,6 +239,7 @@ const renderMainPanel = (): string => {
       <div class="tab-actions">
         ${localeControl}
         <button class="icon-btn primary" id="btn-render" title="Render" ${rendering ? 'disabled' : ''}>${renderIcon}</button>
+        ${canEdit ? `<button class="icon-btn" id="btn-editor" title="Open in editor">${editorIcon}</button>` : ''}
         ${canOpen ? `<button class="icon-btn" id="btn-open" title="Open via host HTTP route">${openIcon}</button>` : ''}
       </div>
     </div>
@@ -294,6 +298,14 @@ const openSelected = () => {
   const locale = localeByTemplate.get(selectedId)
   if (locale) url.searchParams.set('locale', locale)
   window.open(url.toString(), '_blank', 'noopener,noreferrer')
+}
+
+const openInEditor = async () => {
+  const description = describedOk(selectedId)
+  if (!description?.sourcePath || !scoped) return
+  const open = scoped.base.services.get('@devframes/service-open')
+  if (!open) return
+  await open.rpc.call('open-in-editor', { path: description.sourcePath })
 }
 
 const destroyTemplateEditor = () => {
@@ -360,6 +372,7 @@ const render = () => {
   })
 
   root.querySelector('#btn-render')?.addEventListener('click', renderSelected)
+  root.querySelector('#btn-editor')?.addEventListener('click', () => { void openInEditor() })
   root.querySelector('#btn-open')?.addEventListener('click', openSelected)
   root.querySelector('#locale-select')?.addEventListener('change', (event) => {
     const id = selectedId
@@ -458,14 +471,16 @@ const selectTemplate = async (id: string) => {
   await renderSelected()
 }
 
-const renderSelected = async () => {
+const renderSelected = async (opts?: { keepTab?: boolean }) => {
   if (!selectedId || !scoped) return
 
   const token = ++renderToken
   const id = selectedId
-  rendering = true
-  selectedTab = 'email'
-  render()
+  if (!opts?.keepTab) {
+    rendering = true
+    selectedTab = 'email'
+    render()
+  }
 
   try {
     const result = await scoped.rpc.call(
@@ -532,6 +547,44 @@ const runAll = async () => {
   }
 }
 
+const applyRevision = async (state: TemplatesRevision) => {
+  if (!scoped || state.n === 0) return
+
+  if (state.relist) {
+    const list = await scoped.rpc.call('list-templates') as EmailTemplateEntry[]
+    templates.splice(0, templates.length, ...list)
+    if (selectedId && !templates.some(template => template.id === selectedId)) {
+      selectedId = ''
+      htmlBlobUrl = ''
+      render()
+      return
+    }
+  }
+
+  if (!state.templateId) {
+    descriptions.clear()
+  }
+  else if (!state.locale) {
+    for (const key of [...descriptions.keys()]) {
+      if (key.startsWith(`${state.templateId}:`)) descriptions.delete(key)
+    }
+  }
+  else {
+    descriptions.delete(describeKey(state.templateId, state.locale))
+  }
+
+  const selectedAffected = !state.templateId || state.templateId === selectedId
+  const localeAffected = !state.locale || state.locale === selectedLocale(selectedId)
+  if (!selectedId || !selectedAffected || !localeAffected) {
+    render()
+    return
+  }
+
+  await describeSelected(selectedId, true)
+  if (selectedId !== state.templateId && state.templateId) return
+  await renderSelected({ keepTab: true })
+}
+
 ;(async () => {
   root = document.getElementById('app')
   if (!root) return
@@ -544,6 +597,18 @@ const runAll = async () => {
 
     const list = await scoped.rpc.call('list-templates') as EmailTemplateEntry[]
     templates.push(...list)
+
+    canOpenEditor = scoped.base.services.has('@devframes/service-open')
+    const servicesState = await scoped.base.services.state()
+    servicesState.on('updated', () => {
+      canOpenEditor = scoped?.base.services.has('@devframes/service-open') ?? false
+      render()
+    })
+
+    const revision = await scoped.rpc.sharedState<TemplatesRevision>('templates-revision')
+    revision.on('updated', (state) => {
+      void applyRevision(state)
+    })
 
     render()
     runAll().catch(() => {})

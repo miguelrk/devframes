@@ -1,7 +1,7 @@
-import type { DevframeNodeContext } from 'devframe'
+import type { DevframeNodeContext, DevframeScopedNodeContext } from 'devframe'
 import { defineRpcFunction } from 'devframe'
 import { z } from 'zod/v4'
-import type { EmailRenderAllResult, EmailTemplatesProvider } from './types.js'
+import type { EmailRenderAllResult, EmailTemplatesProvider, TemplateWatchEvent, TemplatesRevision } from './types.js'
 
 export type ComarkEmailRpcOptions = {
   id: string
@@ -43,6 +43,7 @@ const describeResult = z.union([
     sample: z.record(z.string(), z.unknown()),
     openUrl: z.string().nullable().optional(),
     source: z.string().nullable().optional(),
+    sourcePath: z.string().nullable().optional(),
     locales: z.array(z.string()).optional(),
     locale: z.string().optional(),
   }),
@@ -60,6 +61,47 @@ const renderResult = z.object({
   error: z.string().optional(),
   diagnostics: diagnosticsSchema,
 })
+
+const INITIAL_REVISION: TemplatesRevision = {
+  n: 0,
+  templateId: null,
+  locale: null,
+  relist: false,
+}
+
+const WATCH_DEBOUNCE_MS = 80
+
+const bindTemplateWatch = async (
+  scoped: DevframeScopedNodeContext,
+  watch: NonNullable<EmailTemplatesProvider['watch']>,
+): Promise<void> => {
+  const revision = await scoped.rpc.sharedState<TemplatesRevision>('templates-revision', {
+    initialValue: INITIAL_REVISION,
+  })
+
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let pending: TemplateWatchEvent = {}
+  let pendingRelist = false
+
+  const flush = () => {
+    revision.mutate((draft: TemplatesRevision) => {
+      draft.n += 1
+      draft.templateId = pending.templateId ?? null
+      draft.locale = pending.locale ?? null
+      draft.relist = pendingRelist
+    })
+    pending = {}
+    pendingRelist = false
+  }
+
+  await watch((event) => {
+    if (!event.templateId) pendingRelist = true
+    else if (pending.templateId && pending.templateId !== event.templateId) pendingRelist = true
+    pending = event
+    clearTimeout(timer)
+    timer = setTimeout(flush, WATCH_DEBOUNCE_MS)
+  })
+}
 
 const failed = (error: unknown): { ok: false, error: string, diagnostics: { errors: string[], warnings: string[] } } => {
   const message = error instanceof Error ? error.message : String(error)
@@ -117,9 +159,13 @@ const renderAllFromProvider = async (provider: EmailTemplatesProvider): Promise<
   return results
 }
 
-export const registerComarkEmailRpc = (ctx: DevframeNodeContext, options: ComarkEmailRpcOptions): void => {
+export const registerComarkEmailRpc = async (ctx: DevframeNodeContext, options: ComarkEmailRpcOptions): Promise<void> => {
   const scoped = ctx.scope(options.id)
   const { provider } = options
+
+  await scoped.rpc.sharedState('templates-revision', {
+    initialValue: INITIAL_REVISION,
+  })
 
   scoped.rpc.register(defineRpcFunction({
     name: 'list-templates',
@@ -163,4 +209,8 @@ export const registerComarkEmailRpc = (ctx: DevframeNodeContext, options: Comark
     jsonSerializable: true,
     handler: () => renderAllFromProvider(provider),
   }), true)
+
+  if (ctx.mode === 'dev' && provider.watch) {
+    await bindTemplateWatch(scoped, provider.watch)
+  }
 }

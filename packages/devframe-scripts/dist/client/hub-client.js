@@ -4147,7 +4147,7 @@
     void (async () => {
       const client = await connectDevframe();
       const rpc = client.scope(devframeId).rpc;
-      const scripts = await rpc.call("list-scripts");
+      let scripts = await rpc.call("list-scripts");
       let activeId = scripts[0]?.id ?? null;
       let filter = "";
       let view = readView();
@@ -4303,6 +4303,18 @@
         if (target.id !== "search") return;
         filter = target.value;
         syncList();
+      });
+      const revision = await rpc.sharedState("scripts-revision");
+      revision.on("updated", (state) => {
+        if (state.n === 0) return;
+        void (async () => {
+          scripts = await rpc.call("list-scripts");
+          if (activeId && !scripts.some((item) => item.id === activeId)) {
+            activeId = scripts[0]?.id ?? null;
+            result = null;
+          }
+          render();
+        })();
       });
       render();
     })().catch((error) => {

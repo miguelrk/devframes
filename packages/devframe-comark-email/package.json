@@ -22,6 +22,9 @@
     "devframe": "catalog:",
     "zod": "catalog:"
   },
+  "dependencies": {
+    "@devframes/service-open": "1.0.0"
+  },
   "devDependencies": {
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-markdown": "^6.5.2",
