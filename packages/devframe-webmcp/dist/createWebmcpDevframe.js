@@ -17,7 +17,7 @@ export const createWebmcpDevframe = async (options = {}) => {
         packageName: pkg.name,
         importMetaUrl: import.meta.url,
         homepage: options.homepage ?? 'https://github.com/miguelrk/devframes',
-        description: options.description ?? 'Inspect tools registered for document.modelContext in this tab.',
+        description: options.description ?? 'Inspect WebMCP tools, run them with a validated form, and read the shared page state.',
         icon: options.icon ?? 'ph:robot-duotone',
         clientAssets,
         dock: { groupId },

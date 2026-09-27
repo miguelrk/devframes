@@ -22,6 +22,7 @@ const tools = ref<WebmcpToolRow[]>([])
 const source = ref<'document' | 'navigator' | 'snapshot' | 'none'>('none')
 const hasGetTools = ref(false)
 const canExecute = ref(false)
+const liveToolCount = ref(0)
 const syncStatus = ref<WebmcpSyncStatus | undefined>()
 const activeName = ref<string | null>(null)
 const formState = reactive<Record<string, unknown>>({})
@@ -65,10 +66,20 @@ const chips = computed((): StatusChip[] => {
     {
       key: 'count',
       label: `${tools.value.length} tools`,
-      color: 'neutral',
-      hint: 'Tools in this list',
+      color: tools.value.length > 0 ? 'neutral' : 'warning',
+      hint: liveToolCount.value > 0
+        ? 'Tools visible to this frame via getTools'
+        : 'Tools in this list (host registry and/or getTools)',
     },
   ]
+  if (liveToolCount.value === 0 && (tools.value.length > 0 || syncStatus.value)) {
+    list.push({
+      key: 'live',
+      label: 'getTools empty',
+      color: 'warning',
+      hint: 'This frame sees no tools on modelContext.getTools yet. Execute needs a live registration.',
+    })
+  }
   const status = syncStatus.value
   if (!status) return list
   list.push(
@@ -76,13 +87,13 @@ const chips = computed((): StatusChip[] => {
       key: 'model',
       label: 'modelContext',
       color: status.supported ? 'success' : 'error',
-      hint: status.supported ? 'The page registered tools on modelContext' : 'This browser has no modelContext.registerTool',
+      hint: status.supported ? 'The host registered tools on modelContext' : 'This browser has no modelContext.registerTool',
     },
     {
       key: 'registered',
       label: `${status.registered} registered`,
       color: status.failed > 0 ? 'warning' : status.registered > 0 ? 'success' : 'neutral',
-      hint: 'Tools accepted by modelContext.registerTool',
+      hint: 'Tools accepted by modelContext.registerTool on the host',
     },
     {
       key: 'failed',
@@ -186,6 +197,7 @@ const refresh = async () => {
   source.value = context.source
   hasGetTools.value = context.hasGetTools
   canExecute.value = Boolean(context.modelContext?.executeTool)
+  liveToolCount.value = context.liveToolCount
   syncStatus.value = context.snapshot?.status
   if (activeName.value && !context.tools.some(tool => tool.name === activeName.value)) {
     activeName.value = null
@@ -193,25 +205,23 @@ const refresh = async () => {
 }
 
 const loadState = async () => {
+  pageState.value = null
+  pageStateRaw.value = ''
   if (!canExecute.value) {
-    stateError.value = 'executeTool is not available, so page_context cannot run.'
-    pageState.value = null
-    pageStateRaw.value = ''
+    stateError.value = 'executeTool is not available in this frame, so page_context cannot run.'
     return
   }
   stateBusy.value = true
   const result = await executeNamedTool('page_context', {})
   stateBusy.value = false
-  pageStateRaw.value = result.text
   if (!result.ok) {
     stateError.value = result.text
-    pageState.value = null
     return
   }
+  pageStateRaw.value = result.text
   const parsed = asPageContext(result.data)
   if (!parsed) {
     stateError.value = 'page_context did not return page state.'
-    pageState.value = null
     return
   }
   stateError.value = ''
@@ -586,7 +596,7 @@ onBeforeUnmount(() => {
               Shared client state
             </h2>
             <p class="mt-1 text-sm text-muted">
-              This is the page_context payload. Menus, shortcuts, and WebMCP tools share the same view, record, and overlays. set_view and select_rows write this state.
+              Runs the live <span class="font-mono">page_context</span> tool. Menus, shortcuts, and WebMCP tools share the same view, record, and overlays.
             </p>
           </div>
           <UButton
@@ -600,12 +610,14 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <p
+        <UAlert
           v-if="stateError"
-          class="text-sm text-error"
-        >
-          {{ stateError }}
-        </p>
+          color="warning"
+          variant="subtle"
+          icon="i-lucide-info"
+          title="page_context is not available"
+          :description="stateError"
+        />
 
         <template v-if="pageState">
           <section class="space-y-2">
@@ -765,7 +777,7 @@ onBeforeUnmount(() => {
         </template>
 
         <details
-          v-if="pageStateRaw"
+          v-if="pageState && pageStateRaw"
           class="text-sm"
         >
           <summary class="cursor-pointer text-muted">

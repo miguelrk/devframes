@@ -45,5 +45,16 @@ const indexPath = path.join(outDir, 'index.html')
 let html = fs.readFileSync(indexPath, 'utf8')
 if (!html.includes('./config.js')) {
   html = html.replace('<head>', '<head>\n    <script src="./config.js"></script>')
-  fs.writeFileSync(indexPath, html)
 }
+
+// Hub prepareClientAssets historically copies only index.html + hub-client.js.
+// Inline CSS so styles work even when hub-client.css is not served.
+const cssPath = path.join(outDir, 'hub-client.css')
+if (fs.existsSync(cssPath)) {
+  const css = fs.readFileSync(cssPath, 'utf8')
+  html = html
+    .replace(/<link[^>]*hub-client\.css[^>]*>\s*/i, '')
+    .replace('</head>', `    <style>${css}</style>\n  </head>`)
+}
+
+fs.writeFileSync(indexPath, html)

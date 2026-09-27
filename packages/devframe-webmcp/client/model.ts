@@ -54,18 +54,7 @@ export type ResolvedContext = {
   snapshot?: WebmcpSnapshot
   tools: WebmcpToolRow[]
   hasGetTools: boolean
-}
-
-export type PageContextView = {
-  tableUid?: string | null
-  type?: string
-  search?: string
-  filters?: unknown[]
-  sort?: unknown[]
-  groupBy?: unknown
-  dateRange?: unknown
-  pagination?: unknown
-  selected?: unknown[]
+  liveToolCount: number
 }
 
 export type PageContextState = {
@@ -78,7 +67,17 @@ export type PageContextState = {
   tableLabel?: string | null
   id?: string | null
   entityId?: string | null
-  view?: PageContextView | null
+  view?: {
+    tableUid?: string | null
+    type?: string
+    search?: string
+    filters?: unknown[]
+    sort?: unknown[]
+    groupBy?: unknown
+    dateRange?: unknown
+    pagination?: unknown
+    selected?: unknown[]
+  } | null
   record?: { tableUid?: string, id?: string, label?: string | null } | null
   overlays?: Array<{ tableUid?: unknown, procedure?: unknown, isOpen?: boolean }>
 }
@@ -90,33 +89,53 @@ type DevframeConfig = {
 const config = (globalThis as { __DEVFRAME_CONFIG__?: DevframeConfig }).__DEVFRAME_CONFIG__ ?? {}
 const registryKey = config.registryKey ?? '__DEVFRAME_WEBMCP_REGISTRY__'
 
+/** Walk the parent chain (and top) for host-published data such as the registry snapshot. */
 const readFromAncestors = <T>(read: (win: Window) => T | undefined): T | undefined => {
   const seen = new Set<Window>()
-  for (const candidate of [window.parent, window.top, window]) {
-    if (!candidate || seen.has(candidate)) continue
-    seen.add(candidate)
+  let current: Window | null = window
+  while (current && !seen.has(current)) {
+    seen.add(current)
     try {
-      const value = read(candidate)
+      const value = read(current)
       if (value !== undefined) return value
     } catch {
       // Cross-origin frame.
     }
+    try {
+      if (current.parent === current) break
+      current = current.parent
+    } catch {
+      break
+    }
+  }
+  try {
+    const top = window.top
+    if (top && !seen.has(top)) {
+      const value = read(top)
+      if (value !== undefined) return value
+    }
+  } catch {
+    // Cross-origin top.
   }
   return undefined
 }
 
-const readModelContext = (): { source: 'document' | 'navigator', modelContext: ModelContext } | undefined =>
-  readFromAncestors((win) => {
-    const docContext = (win.document as Document & { modelContext?: ModelContext }).modelContext
-    if (docContext && typeof docContext.getTools === 'function') {
-      return { source: 'document' as const, modelContext: docContext }
-    }
-    const navContext = (win.navigator as Navigator & { modelContext?: ModelContext }).modelContext
-    if (navContext && typeof navContext.getTools === 'function') {
-      return { source: 'navigator' as const, modelContext: navContext }
-    }
-    return undefined
-  })
+/**
+ * getTools / executeTool must run on the *calling* document's modelContext.
+ * Chrome lists same-origin tools from the frame tree on this context.
+ * Do not call getTools on a parent modelContext reference.
+ */
+const readLocalModelContext = (): { source: 'document' | 'navigator', modelContext: ModelContext } | undefined => {
+  const docContext = (document as Document & { modelContext?: ModelContext }).modelContext
+  if (docContext && typeof docContext.getTools === 'function') {
+    return { source: 'document', modelContext: docContext }
+  }
+  const navContext = (navigator as Navigator & { modelContext?: ModelContext }).modelContext
+  if (navContext && typeof navContext.getTools === 'function') {
+    return { source: 'navigator', modelContext: navContext }
+  }
+  return undefined
+}
 
 const readSnapshot = (): WebmcpSnapshot | undefined =>
   readFromAncestors(win => (win as Window & Record<string, { getSnapshot: () => WebmcpSnapshot } | undefined>)[registryKey]?.getSnapshot())
@@ -148,7 +167,7 @@ const mergeTools = (live: WebmcpToolRow[], snapshot?: WebmcpSnapshot): WebmcpToo
 }
 
 export const resolveContext = async (): Promise<ResolvedContext> => {
-  const live = readModelContext()
+  const live = readLocalModelContext()
   const snapshot = readSnapshot()
   if (live?.modelContext.getTools) {
     try {
@@ -165,6 +184,7 @@ export const resolveContext = async (): Promise<ResolvedContext> => {
         snapshot,
         tools: mergeTools(mapped, snapshot),
         hasGetTools: true,
+        liveToolCount: mapped.length,
       }
     } catch {
       // Fall through to the snapshot.
@@ -176,13 +196,14 @@ export const resolveContext = async (): Promise<ResolvedContext> => {
       snapshot,
       tools: Array.isArray(snapshot.tools) ? snapshot.tools : [],
       hasGetTools: false,
+      liveToolCount: 0,
     }
   }
-  return { source: 'none', tools: [], hasGetTools: false }
+  return { source: 'none', tools: [], hasGetTools: false, liveToolCount: 0 }
 }
 
 export const bindToolchange = (onChange: () => void): (() => void) | undefined => {
-  const live = readModelContext()
+  const live = readLocalModelContext()
   const modelContext = live?.modelContext
   if (!modelContext?.addEventListener) return undefined
   modelContext.addEventListener('toolchange', onChange)
@@ -232,18 +253,39 @@ export const asPageContext = (data: unknown): PageContextState | undefined => {
   return data as PageContextState
 }
 
+export const explainMissingTool = (
+  name: string,
+  context: { liveToolCount: number, snapshot?: WebmcpSnapshot },
+): string => {
+  const hostCount = context.snapshot?.tools?.length ?? 0
+  const registered = context.snapshot?.status?.registered
+  if (context.liveToolCount === 0 && hostCount === 0) {
+    return `No WebMCP tools are available. Open this panel from the DevTools dock while an app page is loaded (signed in).`
+  }
+  if (context.liveToolCount === 0 && hostCount > 0) {
+    const reg = typeof registered === 'number' ? ` Host registered ${registered}.` : ''
+    return `Tool "${name}" is not visible on this frame's modelContext yet. The host registry has ${hostCount} tools.${reg} Reload the host page, then open the panel from the dock again.`
+  }
+  return `Tool "${name}" is not registered on modelContext.`
+}
+
 export const executeNamedTool = async (
   name: string,
   args: Record<string, unknown>,
 ): Promise<{ ok: boolean, text: string, data: unknown }> => {
-  const live = readModelContext()
+  const live = readLocalModelContext()
   if (!live?.modelContext.executeTool || !live.modelContext.getTools) {
-    return { ok: false, text: 'executeTool is not available on this page.', data: null }
+    return { ok: false, text: 'executeTool is not available in this frame.', data: null }
   }
   const listed = await live.modelContext.getTools()
   const registered = listed.find(tool => tool.name === name)
   if (!registered) {
-    return { ok: false, text: `Tool "${name}" is not registered on modelContext.`, data: null }
+    const snapshot = readSnapshot()
+    return {
+      ok: false,
+      text: explainMissingTool(name, { liveToolCount: listed.length, snapshot }),
+      data: null,
+    }
   }
   try {
     const result = await live.modelContext.executeTool(registered, JSON.stringify(args))
