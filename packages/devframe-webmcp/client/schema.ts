@@ -23,7 +23,41 @@ export type FieldInfo = {
 }
 
 const isSchema = (value: unknown): value is JsonSchema =>
-  Boolean(value) && typeof value === 'object'
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+
+/** Chrome may return inputSchema as a JSON string; host snapshot returns a plain object. */
+export const normalizeJsonSchema = (schema: unknown): JsonSchema | undefined => {
+  if (!schema) return undefined
+  if (typeof schema === 'string') {
+    try {
+      const parsed = JSON.parse(schema) as unknown
+      return isSchema(parsed) ? parsed : undefined
+    } catch {
+      return undefined
+    }
+  }
+  return isSchema(schema) ? schema : undefined
+}
+
+export const schemaPropertyCount = (schema: unknown): number => {
+  const normalized = normalizeJsonSchema(schema)
+  if (!normalized?.properties || typeof normalized.properties !== 'object') return 0
+  return Object.keys(normalized.properties).length
+}
+
+/** Prefer the schema that still has field properties (snapshot over empty live). */
+export const pickInputSchema = (
+  live: unknown,
+  snapshot: unknown,
+): Record<string, unknown> | undefined => {
+  const a = normalizeJsonSchema(live)
+  const b = normalizeJsonSchema(snapshot)
+  const aCount = schemaPropertyCount(a)
+  const bCount = schemaPropertyCount(b)
+  if (aCount >= bCount && aCount > 0) return a as Record<string, unknown>
+  if (bCount > 0) return b as Record<string, unknown>
+  return (a ?? b) as Record<string, unknown> | undefined
+}
 
 const unwrap = (schema: JsonSchema): JsonSchema => {
   const variants = schema.anyOf ?? schema.oneOf
@@ -43,8 +77,9 @@ const typeNames = (schema: JsonSchema): string[] => {
 }
 
 export const fieldsFromSchema = (schema: unknown): FieldInfo[] => {
-  if (!isSchema(schema)) return []
-  const root = unwrap(schema)
+  const normalized = normalizeJsonSchema(schema)
+  if (!normalized) return []
+  const root = unwrap(normalized)
   if (!root.properties) return []
   const required = new Set(Array.isArray(root.required) ? root.required : [])
   return Object.entries(root.properties).map(([key, prop]) => {

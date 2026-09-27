@@ -1,3 +1,5 @@
+import { pickInputSchema } from './schema'
+
 export type ModelContextTool = {
   name: string
   description?: string
@@ -150,7 +152,8 @@ const mergeTools = (live: WebmcpToolRow[], snapshot?: WebmcpSnapshot): WebmcpToo
       ...meta,
       ...tool,
       description: tool.description || meta?.description || '',
-      inputSchema: tool.inputSchema ?? meta?.inputSchema,
+      // Live getTools often returns {} or a JSON string; prefer snapshot when richer.
+      inputSchema: pickInputSchema(tool.inputSchema, meta?.inputSchema),
       annotations: tool.annotations ?? meta?.annotations,
       icon: meta?.icon ?? tool.icon,
       color: meta?.color ?? tool.color,
@@ -228,23 +231,35 @@ const contentText = (result: unknown): string | undefined => {
 }
 
 export const presentResult = (result: unknown): { ok: boolean, text: string, data: unknown } => {
-  const errored = Boolean(result && typeof result === 'object' && 'isError' in result && (result as { isError?: boolean }).isError)
-  const rawText = contentText(result)
+  // Chrome executeTool may return a JSON string of the MCP envelope.
+  let value: unknown = result
+  if (typeof value === 'string') {
+    const parsed = tryParse(value)
+    if (parsed !== undefined) value = parsed
+  }
+
+  const errored = Boolean(
+    value
+    && typeof value === 'object'
+    && 'isError' in value
+    && (value as { isError?: boolean }).isError,
+  )
+
+  const rawText = contentText(value)
   if (rawText !== undefined) {
     const data = tryParse(rawText)
-    const text = data === undefined ? rawText : JSON.stringify(data, null, 2)
-    return { ok: !errored, text, data: data === undefined ? rawText : data }
-  }
-  if (typeof result === 'string') {
-    const data = tryParse(result)
-    return {
-      ok: !errored,
-      text: data === undefined ? result : JSON.stringify(data, null, 2),
-      data: data === undefined ? result : data,
+    if (data !== undefined) {
+      return { ok: !errored, text: JSON.stringify(data, null, 2), data }
     }
+    return { ok: !errored, text: rawText, data: rawText }
   }
-  const text = result === undefined ? '' : (JSON.stringify(result, null, 2) ?? '')
-  return { ok: !errored, text, data: result }
+
+  if (typeof value === 'string') {
+    return { ok: !errored, text: value, data: value }
+  }
+
+  const text = value === undefined ? '' : (JSON.stringify(value, null, 2) ?? '')
+  return { ok: !errored, text, data: value }
 }
 
 export const asPageContext = (data: unknown): PageContextState | undefined => {
