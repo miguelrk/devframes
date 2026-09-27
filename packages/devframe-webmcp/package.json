@@ -22,9 +22,14 @@
     "devframe": "catalog:"
   },
   "devDependencies": {
+    "@nuxt/ui": "4.11.1",
     "@types/node": "catalog:",
+    "@vitejs/plugin-vue": "^6.0.1",
     "devframe": "catalog:",
-    "esbuild": "^0.25.12",
-    "typescript": "catalog:"
+    "tailwindcss": "^4.3.3",
+    "typescript": "catalog:",
+    "vite": "^7.1.5",
+    "vue": "catalog:",
+    "zod": "catalog:"
   }
 }

@@ -1,0 +1,46 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  color-scheme: dark;
+}
+
+.shell {
+  container-type: inline-size;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container (min-width: 760px) {
+  .workspace.split {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .tool-list {
+    border-right: 1px solid var(--ui-border);
+  }
+
+  .back-narrow {
+    display: none;
+  }
+}
+
+@container (max-width: 759px) {
+  .workspace.has-tool .tool-list {
+    display: none;
+  }
+
+  .workspace:not(.has-tool) .tool-detail {
+    display: none;
+  }
+}
