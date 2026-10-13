@@ -6,9 +6,13 @@ export const DEFAULT_MCPJAM_HOSTED_URL = 'https://app.mcpjam.com';
 /** Default local port — 6274 is reserved for the official MCP Inspector devframe. */
 const DEFAULT_INSPECTOR_PORT = 6275;
 const DEFAULT_INSPECTOR_PACKAGE = '@mcpjam/inspector';
-const inspectorBaseArgs = (inspectorPackage, inspectorPort) => [
+/** npm bin name — not the package name (`pnpm exec @scope/pkg` is invalid). */
+const DEFAULT_INSPECTOR_BIN = 'inspector';
+const inspectorBaseArgs = (inspectorPackage, inspectorBin, inspectorPort) => [
     'exec',
+    '--package',
     inspectorPackage,
+    inspectorBin,
     '--port',
     String(inspectorPort),
 ];
@@ -16,6 +20,7 @@ const buildTransports = (options) => {
     if (options.transports?.length)
         return options.transports;
     const inspectorPackage = options.inspectorPackage ?? DEFAULT_INSPECTOR_PACKAGE;
+    const inspectorBin = options.inspectorBin ?? DEFAULT_INSPECTOR_BIN;
     const inspectorPort = options.inspectorPort ?? DEFAULT_INSPECTOR_PORT;
     const transports = [];
     if (options.stdio) {
@@ -27,7 +32,7 @@ const buildTransports = (options) => {
             process: {
                 command,
                 args: [
-                    ...inspectorBaseArgs(inspectorPackage, inspectorPort),
+                    ...inspectorBaseArgs(inspectorPackage, inspectorBin, inspectorPort),
                     ...options.stdio.args,
                 ],
                 env: options.stdio.env,
@@ -43,7 +48,7 @@ const buildTransports = (options) => {
             process: {
                 command,
                 args: [
-                    ...inspectorBaseArgs(inspectorPackage, inspectorPort),
+                    ...inspectorBaseArgs(inspectorPackage, inspectorBin, inspectorPort),
                     '--url',
                     options.http.serverUrl,
                     ...(options.http.extraArgs ?? []),

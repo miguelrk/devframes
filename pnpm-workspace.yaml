@@ -2,7 +2,10 @@ packages:
   - 'packages/*'
 
 allowBuilds:
+  '@sentry/cli': set this to true or false
+  core-js: set this to true or false
   esbuild: true
+  node-pty: set this to true or false
   vue-demi: true
 
 catalog:
@@ -27,3 +30,5 @@ minimumReleaseAgeExclude:
   - '@vue/server-renderer@3.5.43'
   - '@vue/shared@3.5.43'
   - vue@3.5.43
+  - '@mcpjam/inspector@3.16.0'
+  - '@mcpjam/sdk@9.3.0'

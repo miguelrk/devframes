@@ -7,6 +7,7 @@ export type CreateMcpJamLauncherOptions = DevframeBaseOptions & {
     cwd?: string;
     inspectorPort?: number;
     inspectorPackage?: string;
+    inspectorBin?: string;
     hostedUrl?: string;
     transports?: McpJamTransport[];
     stdio?: McpJamStdioOptions;

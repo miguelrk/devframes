@@ -16,6 +16,9 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
+  "dependencies": {
+    "@mcpjam/inspector": "3.16.0"
+  },
   "peerDependencies": {
     "@vitejs/devtools-kit": "catalog:"
   },

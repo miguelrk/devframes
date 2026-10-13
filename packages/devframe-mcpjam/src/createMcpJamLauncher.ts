@@ -14,11 +14,14 @@ export const DEFAULT_MCPJAM_HOSTED_URL = 'https://app.mcpjam.com'
 /** Default local port — 6274 is reserved for the official MCP Inspector devframe. */
 const DEFAULT_INSPECTOR_PORT = 6275
 const DEFAULT_INSPECTOR_PACKAGE = '@mcpjam/inspector'
+/** npm bin name — not the package name (`pnpm exec @scope/pkg` is invalid). */
+const DEFAULT_INSPECTOR_BIN = 'inspector'
 
 export type CreateMcpJamLauncherOptions = DevframeBaseOptions & {
   cwd?: string
   inspectorPort?: number
   inspectorPackage?: string
+  inspectorBin?: string
   hostedUrl?: string
   transports?: McpJamTransport[]
   stdio?: McpJamStdioOptions
@@ -27,10 +30,13 @@ export type CreateMcpJamLauncherOptions = DevframeBaseOptions & {
 
 const inspectorBaseArgs = (
   inspectorPackage: string,
+  inspectorBin: string,
   inspectorPort: number,
 ): string[] => [
   'exec',
+  '--package',
   inspectorPackage,
+  inspectorBin,
   '--port',
   String(inspectorPort),
 ]
@@ -39,6 +45,7 @@ const buildTransports = (options: CreateMcpJamLauncherOptions): McpJamTransport[
   if (options.transports?.length) return options.transports
 
   const inspectorPackage = options.inspectorPackage ?? DEFAULT_INSPECTOR_PACKAGE
+  const inspectorBin = options.inspectorBin ?? DEFAULT_INSPECTOR_BIN
   const inspectorPort = options.inspectorPort ?? DEFAULT_INSPECTOR_PORT
   const transports: McpJamTransport[] = []
 
@@ -51,7 +58,7 @@ const buildTransports = (options: CreateMcpJamLauncherOptions): McpJamTransport[
       process: {
         command,
         args: [
-          ...inspectorBaseArgs(inspectorPackage, inspectorPort),
+          ...inspectorBaseArgs(inspectorPackage, inspectorBin, inspectorPort),
           ...options.stdio.args,
         ],
         env: options.stdio.env,
@@ -68,7 +75,7 @@ const buildTransports = (options: CreateMcpJamLauncherOptions): McpJamTransport[
       process: {
         command,
         args: [
-          ...inspectorBaseArgs(inspectorPackage, inspectorPort),
+          ...inspectorBaseArgs(inspectorPackage, inspectorBin, inspectorPort),
           '--url',
           options.http.serverUrl,
           ...(options.http.extraArgs ?? []),
