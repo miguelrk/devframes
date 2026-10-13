@@ -280,7 +280,7 @@ importers:
         version: 22.19.11
       '@vitejs/devtools-kit':
         specifier: 'catalog:'
-        version: 0.7.5(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@6.4.3(@types/node@22.19.11))
+        version: 0.7.5(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@6.4.3(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.33.0))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -295,7 +295,22 @@ importers:
         version: 22.19.11
       '@vitejs/devtools-kit':
         specifier: 'catalog:'
-        version: 0.7.5(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@6.4.3(@types/node@22.19.11))
+        version: 0.7.5(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@6.4.3(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.33.0))
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite:
+        specifier: ^6.4.1
+        version: 6.4.3(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.33.0)
+
+  packages/devframe-mcpjam:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.11
+      '@vitejs/devtools-kit':
+        specifier: 'catalog:'
+        version: 0.7.5(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@6.4.3(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.33.0))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -310,7 +325,7 @@ importers:
         version: 22.19.11
       '@vitejs/devtools-kit':
         specifier: 'catalog:'
-        version: 0.7.5(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@6.4.3(@types/node@22.19.11))
+        version: 0.7.5(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@6.4.3(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.33.0))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -4339,7 +4354,7 @@ snapshots:
       - rollup
       - unloader
 
-  '@vitejs/devtools-kit@0.7.5(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@6.4.3(@types/node@22.19.11))':
+  '@vitejs/devtools-kit@0.7.5(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@6.4.3(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.33.0))':
     dependencies:
       '@devframes/hub': 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(srvx@1.0.5))
       '@devframes/json-render': 1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(srvx@1.0.5)))(devframe@1.0.0(srvx@1.0.5))
