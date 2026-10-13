@@ -1,5 +1,7 @@
 import type { Plugin } from 'vite'
+import { fileURLToPath } from 'node:url'
 import { createProcessLauncher } from '@vitejs/devtools-kit/node'
+import { ensureMcpJamEmbedProxy } from './embedProxy.js'
 import { waitForUrl } from './waitForUrl.js'
 import type {
   DevframeBaseOptions,
@@ -13,6 +15,8 @@ export const DEFAULT_MCPJAM_GROUP_ID = 'devframes'
 export const DEFAULT_MCPJAM_HOSTED_URL = 'https://app.mcpjam.com'
 /** Default local port — 6274 is reserved for the official MCP Inspector devframe. */
 const DEFAULT_INSPECTOR_PORT = 6275
+/** Dock iframe. The inspector itself refuses to be framed (`frame-ancestors 'self'`). */
+const DEFAULT_EMBED_PORT = 6276
 const DEFAULT_INSPECTOR_PACKAGE = '@mcpjam/inspector'
 /** npm bin name — not the package name (`pnpm exec @scope/pkg` is invalid). */
 const DEFAULT_INSPECTOR_BIN = 'inspector'
@@ -20,6 +24,7 @@ const DEFAULT_INSPECTOR_BIN = 'inspector'
 export type CreateMcpJamLauncherOptions = DevframeBaseOptions & {
   cwd?: string
   inspectorPort?: number
+  embedPort?: number
   inspectorPackage?: string
   inspectorBin?: string
   hostedUrl?: string
@@ -70,12 +75,6 @@ const nodeOptionsForChild = (raw: string | undefined): string | undefined => {
   return next || undefined
 }
 
-/** Absolute `--import` so the child rewrites framing headers. See `relaxFraming.ts`. */
-const framingImport = (): string => {
-  const hook = new URL('./relaxFraming.js', import.meta.url).href
-  return `--import ${hook}`
-}
-
 const inspectorEnv = (
   inspectorUrl: string,
   extra: Record<string, string> | undefined,
@@ -87,9 +86,7 @@ const inspectorEnv = (
     MCPJAM_INSPECTOR_FRONTEND_URL: inspectorUrl,
     ...extra,
   }
-  const nodeOptions = [nodeOptionsForChild(env.NODE_OPTIONS), framingImport()]
-    .filter((part): part is string => Boolean(part))
-    .join(' ')
+  const nodeOptions = nodeOptionsForChild(env.NODE_OPTIONS)
   if (nodeOptions) env.NODE_OPTIONS = nodeOptions
   else delete env.NODE_OPTIONS
   // Portless (and mkcert) certs are in the OS trust store. Node's default
@@ -155,7 +152,9 @@ export const createMcpJamLauncher = (
   const transports = buildTransports(options)
   const cwd = options.cwd ?? process.cwd()
   const inspectorPort = options.inspectorPort ?? DEFAULT_INSPECTOR_PORT
+  const embedPort = options.embedPort ?? DEFAULT_EMBED_PORT
   const inspectorUrl = `http://127.0.0.1:${inspectorPort}`
+  const runner = fileURLToPath(new URL('./runInspector.js', import.meta.url))
   const hostedHint = options.hostedUrl ?? DEFAULT_MCPJAM_HOSTED_URL
 
   return createProcessLauncher({
@@ -178,16 +177,21 @@ export const createMcpJamLauncher = (
         throw new Error('No MCPJam transport configured')
       }
       return {
-        command: transport.process.command,
-        args: transport.process.args,
+        command: process.execPath,
+        args: [runner],
         cwd,
-        env: inspectorEnv(inspectorUrl, transport.process.env),
+        env: {
+          ...inspectorEnv(inspectorUrl, transport.process.env),
+          MCPJAM_INSPECTOR_PORT: String(inspectorPort),
+          MCPJAM_INSPECTOR_COMMAND: transport.process.command,
+          MCPJAM_INSPECTOR_ARGS: JSON.stringify(transport.process.args),
+        },
       }
     },
     serve: {
       onReady: async () => {
         await waitForUrl(inspectorUrl)
-        return inspectorUrl
+        return await ensureMcpJamEmbedProxy(embedPort, inspectorPort)
       },
     },
   })

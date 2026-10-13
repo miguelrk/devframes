@@ -6,6 +6,7 @@ export declare const DEFAULT_MCPJAM_HOSTED_URL = "https://app.mcpjam.com";
 export type CreateMcpJamLauncherOptions = DevframeBaseOptions & {
     cwd?: string;
     inspectorPort?: number;
+    embedPort?: number;
     inspectorPackage?: string;
     inspectorBin?: string;
     hostedUrl?: string;
