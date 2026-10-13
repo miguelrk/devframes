@@ -30,5 +30,3 @@ minimumReleaseAgeExclude:
   - '@vue/server-renderer@3.5.43'
   - '@vue/shared@3.5.43'
   - vue@3.5.43
-  - '@mcpjam/inspector@3.16.0'
-  - '@mcpjam/sdk@9.3.0'
