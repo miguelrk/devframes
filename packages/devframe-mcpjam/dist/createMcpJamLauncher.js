@@ -9,7 +9,7 @@ const DEFAULT_INSPECTOR_PACKAGE = '@mcpjam/inspector';
 /** npm bin name — not the package name (`pnpm exec @scope/pkg` is invalid). */
 const DEFAULT_INSPECTOR_BIN = 'inspector';
 const inspectorBaseArgs = (inspectorPackage, inspectorBin, inspectorPort) => [
-    'exec',
+    'dlx',
     '--package',
     inspectorPackage,
     inspectorBin,

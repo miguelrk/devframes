@@ -33,7 +33,7 @@ const inspectorBaseArgs = (
   inspectorBin: string,
   inspectorPort: number,
 ): string[] => [
-  'exec',
+  'dlx',
   '--package',
   inspectorPackage,
   inspectorBin,
