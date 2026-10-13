@@ -16,6 +16,52 @@ const inspectorBaseArgs = (inspectorPackage, inspectorBin, inspectorPort) => [
     '--port',
     String(inspectorPort),
 ];
+const unquote = (token) => token.replace(/^['"]|['"]$/g, '');
+/**
+ * `@mcpjam/inspector` starts its server with `cwd` set to the package root.
+ * A host `NODE_OPTIONS=--import ./relative` then resolves inside that package
+ * and the process exits. Drop those hooks. Keep absolute hooks and other flags.
+ */
+const nodeOptionsForChild = (raw) => {
+    if (!raw)
+        return undefined;
+    const tokens = raw.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) ?? [];
+    const kept = [];
+    for (let index = 0; index < tokens.length; index++) {
+        const token = unquote(tokens[index] ?? '');
+        const equals = token.indexOf('=');
+        const flag = equals === -1 ? token : token.slice(0, equals);
+        if (flag !== '--import' && flag !== '--require') {
+            kept.push(token);
+            continue;
+        }
+        const spec = equals === -1
+            ? unquote(tokens[++index] ?? '')
+            : token.slice(equals + 1);
+        if (!spec || spec.startsWith('.'))
+            continue;
+        kept.push(flag, spec);
+    }
+    const next = kept.join(' ').trim();
+    return next || undefined;
+};
+const inspectorEnv = (inspectorUrl, extra) => {
+    const env = {
+        ...Object.fromEntries(Object.entries(process.env).filter((entry) => entry[1] != null)),
+        MCPJAM_INSPECTOR_FRONTEND_URL: inspectorUrl,
+        ...extra,
+    };
+    const nodeOptions = nodeOptionsForChild(env.NODE_OPTIONS);
+    if (nodeOptions)
+        env.NODE_OPTIONS = nodeOptions;
+    else
+        delete env.NODE_OPTIONS;
+    // Portless (and mkcert) certs are in the OS trust store. Node's default
+    // store does not include them, so fetch to https://*.local fails.
+    if (!env.NODE_USE_SYSTEM_CA)
+        env.NODE_USE_SYSTEM_CA = '1';
+    return env;
+};
 const buildTransports = (options) => {
     if (options.transports?.length)
         return options.transports;
@@ -91,11 +137,7 @@ export const createMcpJamLauncher = (options) => {
                 command: transport.process.command,
                 args: transport.process.args,
                 cwd,
-                env: {
-                    ...Object.fromEntries(Object.entries(process.env).filter((entry) => entry[1] != null)),
-                    MCPJAM_INSPECTOR_FRONTEND_URL: inspectorUrl,
-                    ...transport.process.env,
-                },
+                env: inspectorEnv(inspectorUrl, transport.process.env),
             };
         },
         serve: {
