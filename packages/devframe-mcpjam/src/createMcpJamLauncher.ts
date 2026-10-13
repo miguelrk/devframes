@@ -70,6 +70,12 @@ const nodeOptionsForChild = (raw: string | undefined): string | undefined => {
   return next || undefined
 }
 
+/** Absolute `--import` so the child rewrites framing headers. See `relaxFraming.ts`. */
+const framingImport = (): string => {
+  const hook = new URL('./relaxFraming.js', import.meta.url).href
+  return `--import ${hook}`
+}
+
 const inspectorEnv = (
   inspectorUrl: string,
   extra: Record<string, string> | undefined,
@@ -81,7 +87,9 @@ const inspectorEnv = (
     MCPJAM_INSPECTOR_FRONTEND_URL: inspectorUrl,
     ...extra,
   }
-  const nodeOptions = nodeOptionsForChild(env.NODE_OPTIONS)
+  const nodeOptions = [nodeOptionsForChild(env.NODE_OPTIONS), framingImport()]
+    .filter((part): part is string => Boolean(part))
+    .join(' ')
   if (nodeOptions) env.NODE_OPTIONS = nodeOptions
   else delete env.NODE_OPTIONS
   // Portless (and mkcert) certs are in the OS trust store. Node's default

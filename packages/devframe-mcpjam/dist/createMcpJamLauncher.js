@@ -45,13 +45,20 @@ const nodeOptionsForChild = (raw) => {
     const next = kept.join(' ').trim();
     return next || undefined;
 };
+/** Absolute `--import` so the child rewrites framing headers. See `relaxFraming.ts`. */
+const framingImport = () => {
+    const hook = new URL('./relaxFraming.js', import.meta.url).href;
+    return `--import ${hook}`;
+};
 const inspectorEnv = (inspectorUrl, extra) => {
     const env = {
         ...Object.fromEntries(Object.entries(process.env).filter((entry) => entry[1] != null)),
         MCPJAM_INSPECTOR_FRONTEND_URL: inspectorUrl,
         ...extra,
     };
-    const nodeOptions = nodeOptionsForChild(env.NODE_OPTIONS);
+    const nodeOptions = [nodeOptionsForChild(env.NODE_OPTIONS), framingImport()]
+        .filter((part) => Boolean(part))
+        .join(' ');
     if (nodeOptions)
         env.NODE_OPTIONS = nodeOptions;
     else
