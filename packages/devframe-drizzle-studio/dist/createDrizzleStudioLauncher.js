@@ -7,24 +7,68 @@ const DEFAULT_API_PORT = 4983;
 const DEFAULT_UI_PROXY_PORT = 4984;
 const DEFAULT_UI_ORIGIN = 'https://local.drizzle.studio';
 let studioUiProxyReady;
-const ensureStudioUiProxy = (uiProxyPort, uiOrigin) => {
+const studioPageUrl = (uiProxyPort) => `http://127.0.0.1:${uiProxyPort}/?host=127.0.0.1&port=${uiProxyPort}`;
+const readRequestBody = async (req) => {
+    const chunks = [];
+    for await (const chunk of req) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks);
+};
+const ensureStudioUiProxy = (uiProxyPort, uiOrigin, apiOrigin) => {
     if (studioUiProxyReady)
         return studioUiProxyReady;
-    const url = `http://127.0.0.1:${uiProxyPort}/`;
+    const pageUrl = studioPageUrl(uiProxyPort);
     studioUiProxyReady = new Promise((resolve, reject) => {
         const server = createServer((req, res) => {
             void (async () => {
                 try {
-                    const incoming = new URL(req.url ?? '/', url);
-                    const target = new URL(incoming.pathname + incoming.search, uiOrigin);
+                    const method = req.method ?? 'GET';
+                    const incoming = new URL(req.url ?? '/', pageUrl);
+                    const headers = {
+                        'cache-control': 'no-store',
+                        'cross-origin-resource-policy': 'cross-origin',
+                    };
+                    // Studio treats any HTTP 2xx on GET /init as a legacy kit and aborts.
+                    // https://local.drizzle.studio/init is the SPA and returns 200.
+                    if (method === 'GET' && incoming.pathname === '/init') {
+                        res.writeHead(404, { ...headers, 'content-type': 'text/plain; charset=utf-8' });
+                        res.end('not found');
+                        return;
+                    }
+                    if (incoming.pathname.startsWith('/cdn-cgi/')) {
+                        res.writeHead(204, headers);
+                        res.end();
+                        return;
+                    }
+                    const isApi = incoming.pathname === '/' && (method === 'POST' || method === 'OPTIONS');
+                    const target = isApi
+                        ? new URL(incoming.pathname + incoming.search, apiOrigin)
+                        : new URL(incoming.pathname + incoming.search, uiOrigin);
                     const upstream = await fetch(target, {
-                        redirect: 'follow',
-                        headers: { accept: req.headers.accept ?? '*/*' },
+                        method: isApi ? method : 'GET',
+                        redirect: isApi ? 'manual' : 'follow',
+                        headers: {
+                            accept: req.headers.accept ?? '*/*',
+                            ...(req.headers['content-type']
+                                ? { 'content-type': String(req.headers['content-type']) }
+                                : {}),
+                        },
+                        body: isApi && method === 'POST' ? await readRequestBody(req) : undefined,
                     });
-                    const headers = { 'cache-control': 'no-store' };
                     const contentType = upstream.headers.get('content-type');
                     if (contentType)
                         headers['content-type'] = contentType;
+                    for (const name of [
+                        'access-control-allow-origin',
+                        'access-control-allow-methods',
+                        'access-control-allow-headers',
+                        'access-control-allow-private-network',
+                    ]) {
+                        const value = upstream.headers.get(name);
+                        if (value)
+                            headers[name] = value;
+                    }
                     res.writeHead(upstream.status, headers);
                     res.end(Buffer.from(await upstream.arrayBuffer()));
                 }
@@ -38,14 +82,14 @@ const ensureStudioUiProxy = (uiProxyPort, uiOrigin) => {
         });
         server.once('error', (error) => {
             if (error.code === 'EADDRINUSE') {
-                resolve(url);
+                resolve(pageUrl);
                 return;
             }
             studioUiProxyReady = undefined;
             reject(error);
         });
         server.listen(uiProxyPort, '127.0.0.1', () => {
-            resolve(url);
+            resolve(pageUrl);
         });
     });
     return studioUiProxyReady;
@@ -91,7 +135,7 @@ export const createDrizzleStudioLauncher = (options = {}) => {
                 await waitForUrl(studioApiUrl);
                 if (!useProxy)
                     return studioApiUrl;
-                return await ensureStudioUiProxy(uiProxyPort, uiOrigin);
+                return await ensureStudioUiProxy(uiProxyPort, uiOrigin, studioApiUrl);
             },
         },
     });
